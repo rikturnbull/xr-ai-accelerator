@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.InferenceEngine;
 
-namespace XrAiYolo
+namespace XrAiAccelerator
 {
     public class YoloBoxer
     {

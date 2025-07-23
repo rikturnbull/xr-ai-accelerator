@@ -2,7 +2,10 @@ using UnityEngine;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-public interface IXrAiImageToText
+namespace XrAiAccelerator
 {
-    public Task<XrAiResult<string>> Execute(byte[] imageBytes, string imageFormat, Dictionary<string, string> options = null);
+    public interface IXrAiImageToText
+    {
+        public Task<XrAiResult<string>> Execute(byte[] imageBytes, string imageFormat, Dictionary<string, string> options = null);
+    }
 }

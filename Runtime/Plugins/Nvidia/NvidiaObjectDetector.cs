@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 using UnityEngine;
 using System.Text;
 
-namespace XrAiNvidia
+namespace XrAiAccelerator
 {
     #region Main Class
     public class NvidiaObjectDetector : IXrAiObjectDetector

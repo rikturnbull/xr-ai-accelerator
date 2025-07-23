@@ -6,7 +6,7 @@ using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace XrAiOpenAI
+namespace XrAiAccelerator
 {
     #region Main Class
     public class OpenAITextToImage : IXrAiTextToImage

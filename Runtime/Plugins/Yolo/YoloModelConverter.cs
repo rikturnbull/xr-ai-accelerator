@@ -1,7 +1,7 @@
 using UnityEngine;
 using Unity.InferenceEngine;
 
-namespace XrAiYolo
+namespace XrAiAccelerator
 {
 
     public class YoloModelConverter : MonoBehaviour

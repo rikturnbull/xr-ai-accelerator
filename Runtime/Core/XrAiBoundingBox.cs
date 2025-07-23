@@ -1,8 +1,11 @@
-public struct XrAiBoundingBox
+namespace XrAiAccelerator
 {
-    public float CenterX;
-    public float CenterY;
-    public float Width;
-    public float Height;
-    public string ClassName;
+    public struct XrAiBoundingBox
+    {
+        public float CenterX;
+        public float CenterY;
+        public float Width;
+        public float Height;
+        public string ClassName;
+    }
 }

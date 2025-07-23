@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using Unity.InferenceEngine;
 
-namespace XrAiYolo
+namespace XrAiAccelerator
 {
 
     [CustomEditor(typeof(YoloModelConverter))]

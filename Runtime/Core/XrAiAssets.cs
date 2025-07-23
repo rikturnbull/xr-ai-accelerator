@@ -1,6 +1,9 @@
 using UnityEngine;
 
-public class XrAiAssets : MonoBehaviour
+namespace XrAiAccelerator
 {
-    
+    public class XrAiAssets : MonoBehaviour
+    {
+        
+    }
 }

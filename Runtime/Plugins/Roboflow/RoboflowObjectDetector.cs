@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
 
-namespace XrAiRoboflow
+namespace XrAiAccelerator
 {
     #region Main Class
     public class RoboflowObjectDetector : IXrAiObjectDetector
