@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 
-[System.Serializable]
-public class XrAiProperty
+namespace XrAiAccelerator
 {
-    public string key;
-    public string value;
-}
+    [System.Serializable]
+    public class XrAiProperty
+    {
+        public string key;
+        public string value;
+    }
 
 [System.Serializable]
 public class XrAiSection
@@ -315,4 +317,5 @@ public class XrAiModelManager : MonoBehaviour
         }
         return defaultValue;
     }
+}
 }

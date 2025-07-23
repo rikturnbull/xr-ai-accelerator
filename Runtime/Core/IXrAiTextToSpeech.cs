@@ -2,7 +2,10 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using UnityEngine;
 
-public interface IXrAiTextToSpeech
+namespace XrAiAccelerator
 {
-    public Task<XrAiResult<AudioClip>> Execute(string text, Dictionary<string, string> options = null);
+    public interface IXrAiTextToSpeech
+    {
+        public Task<XrAiResult<AudioClip>> Execute(string text, Dictionary<string, string> options = null);
+    }
 }

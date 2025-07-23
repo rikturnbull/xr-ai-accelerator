@@ -5,7 +5,7 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace XrAiStabilityAi
+namespace XrAiAccelerator
 {
     public class StabilityAiImageTo3d : IXrAImageTo3d
     {

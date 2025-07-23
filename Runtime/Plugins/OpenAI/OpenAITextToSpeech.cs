@@ -5,47 +5,50 @@ using OpenAI.Audio;
 using System;
 using UnityEngine;
 
-public class OpenAITextToSpeech : IXrAiTextToSpeech
+namespace XrAiAccelerator
 {
-    private Dictionary<string, string> _globalOptions = new();
-
-    private OpenAIClient _openAIClient;
-
-    public OpenAITextToSpeech(Dictionary<string, string> options)
+    public class OpenAITextToSpeech : IXrAiTextToSpeech
     {
-        _globalOptions = options;
-        _openAIClient = new OpenAIClient(GetOption("apiKey"));
-    }
+        private Dictionary<string, string> _globalOptions = new();
 
-    public async Task<XrAiResult<AudioClip>> Execute(string text, Dictionary<string, string> options = null)
-    {
-        return await Execute(text);
-    }
+        private OpenAIClient _openAIClient;
 
-    private async Task<XrAiResult<AudioClip>> Execute(string text)
-    {
-        try
+        public OpenAITextToSpeech(Dictionary<string, string> options)
         {
-            SpeechRequest request = new SpeechRequest(text);
-            AudioClip speechClip = await _openAIClient.AudioEndpoint.GetSpeechAsync(request);
-            return XrAiResult.Success(speechClip);
+            _globalOptions = options;
+            _openAIClient = new OpenAIClient(GetOption("apiKey"));
         }
-        catch (Exception ex)
-        {
-            return XrAiResult.Failure<AudioClip>(ex.Message);
-        }
-    }
 
-    private string GetOption(string key, Dictionary<string, string> options = null)
-    {
-        if (options != null && options.TryGetValue(key, out string value))
+        public async Task<XrAiResult<AudioClip>> Execute(string text, Dictionary<string, string> options = null)
         {
-            return value;
+            return await Execute(text);
         }
-        else if (_globalOptions.TryGetValue(key, out value))
+
+        private async Task<XrAiResult<AudioClip>> Execute(string text)
         {
-            return value;
+            try
+            {
+                SpeechRequest request = new SpeechRequest(text);
+                AudioClip speechClip = await _openAIClient.AudioEndpoint.GetSpeechAsync(request);
+                return XrAiResult.Success(speechClip);
+            }
+            catch (Exception ex)
+            {
+                return XrAiResult.Failure<AudioClip>(ex.Message);
+            }
         }
-        throw new KeyNotFoundException($"Option '{key}' not found.");
+
+        private string GetOption(string key, Dictionary<string, string> options = null)
+        {
+            if (options != null && options.TryGetValue(key, out string value))
+            {
+                return value;
+            }
+            else if (_globalOptions.TryGetValue(key, out value))
+            {
+                return value;
+            }
+            throw new KeyNotFoundException($"Option '{key}' not found.");
+        }
     }
 }

@@ -6,7 +6,7 @@ using System.Text;
 using System.Net.Http;
 using Newtonsoft.Json;
 
-namespace XrAiGoogle
+namespace XrAiAccelerator
 {
 
     #region Main Class

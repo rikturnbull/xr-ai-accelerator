@@ -1,27 +1,30 @@
 using System;
 
-public abstract class XrAiResult
+namespace XrAiAccelerator
 {
-    public bool IsSuccess { get; protected set; }
-    public string ErrorMessage { get; protected set; }
-
-    protected XrAiResult(bool isSuccess, string errorMessage = null)
+    public abstract class XrAiResult
     {
-        IsSuccess = isSuccess;
-        ErrorMessage = errorMessage;
+        public bool IsSuccess { get; protected set; }
+        public string ErrorMessage { get; protected set; }
+
+        protected XrAiResult(bool isSuccess, string errorMessage = null)
+        {
+            IsSuccess = isSuccess;
+            ErrorMessage = errorMessage;
+        }
+
+        public static XrAiResult<T> Success<T>(T data) => new XrAiResult<T>(data, true);
+        public static XrAiResult<T> Failure<T>(string errorMessage) => new XrAiResult<T>(default(T), false, errorMessage);
     }
 
-    public static XrAiResult<T> Success<T>(T data) => new XrAiResult<T>(data, true);
-    public static XrAiResult<T> Failure<T>(string errorMessage) => new XrAiResult<T>(default(T), false, errorMessage);
-}
-
-public class XrAiResult<T> : XrAiResult
-{
-    public T Data { get; private set; }
-
-    internal XrAiResult(T data, bool isSuccess, string errorMessage = null) 
-        : base(isSuccess, errorMessage)
+    public class XrAiResult<T> : XrAiResult
     {
-        Data = data;
+        public T Data { get; private set; }
+
+        internal XrAiResult(T data, bool isSuccess, string errorMessage = null) 
+            : base(isSuccess, errorMessage)
+        {
+            Data = data;
+        }
     }
 }

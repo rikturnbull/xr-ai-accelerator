@@ -5,7 +5,7 @@ using System.Text;
 using System.Net.Http;
 using Newtonsoft.Json;
 
-namespace XrAiNvidia
+namespace XrAiAccelerator
 {
     #region Main Class
     public class NvidiaImageToText : IXrAiImageToText

@@ -5,58 +5,60 @@ using OpenAI.Audio;
 using System;
 using System.IO;
 
-
-public class OpenAISpeechToText : IXrAiSpeechToText
+namespace XrAiAccelerator
 {
-    private Dictionary<string, string> _globalOptions = new();
-
-    private OpenAIClient _openAIClient;
-
-    public OpenAISpeechToText(Dictionary<string, string> options)
+    public class OpenAISpeechToText : IXrAiSpeechToText
     {
-        _globalOptions = options;
-        _openAIClient = new OpenAIClient(GetOption("apiKey"));
-    }
+        private Dictionary<string, string> _globalOptions = new();
 
-    public async Task<XrAiResult<string>> Execute(byte[] audioData, Dictionary<string, string> options = null)
-    {
-        try 
-        {
-            string model = GetOption("model", options);
+        private OpenAIClient _openAIClient;
 
-            return await Execute(audioData, model);
-        }
-        catch (Exception ex)
+        public OpenAISpeechToText(Dictionary<string, string> options)
         {
-            return XrAiResult.Failure<string>(ex.Message);
+            _globalOptions = options;
+            _openAIClient = new OpenAIClient(GetOption("apiKey"));
         }
-    }
 
-    private async Task<XrAiResult<string>> Execute(byte[] audioData, string model)
-    {
-        try
+        public async Task<XrAiResult<string>> Execute(byte[] audioData, Dictionary<string, string> options = null)
         {
-            Stream stream = new MemoryStream(audioData);
-            AudioTranscriptionRequest request = new(stream, "name.wav", model, null, null, "en", null, AudioResponseFormat.Text);
-            string transcription = await _openAIClient.AudioEndpoint.CreateTranscriptionTextAsync(request);
-            return XrAiResult.Success(transcription);
-        }
-        catch (Exception ex)
-        {
-            return XrAiResult.Failure<string>(ex.Message);
-        }
-    }
+            try 
+            {
+                string model = GetOption("model", options);
 
-    private string GetOption(string key, Dictionary<string, string> options = null)
-    {
-        if (options != null && options.TryGetValue(key, out string value))
-        {
-            return value;
+                return await Execute(audioData, model);
+            }
+            catch (Exception ex)
+            {
+                return XrAiResult.Failure<string>(ex.Message);
+            }
         }
-        else if (_globalOptions.TryGetValue(key, out value))
+
+        private async Task<XrAiResult<string>> Execute(byte[] audioData, string model)
         {
-            return value;
+            try
+            {
+                Stream stream = new MemoryStream(audioData);
+                AudioTranscriptionRequest request = new(stream, "name.wav", model, null, null, "en", null, AudioResponseFormat.Text);
+                string transcription = await _openAIClient.AudioEndpoint.CreateTranscriptionTextAsync(request);
+                return XrAiResult.Success(transcription);
+            }
+            catch (Exception ex)
+            {
+                return XrAiResult.Failure<string>(ex.Message);
+            }
         }
-        throw new KeyNotFoundException($"Option '{key}' not found.");
+
+        private string GetOption(string key, Dictionary<string, string> options = null)
+        {
+            if (options != null && options.TryGetValue(key, out string value))
+            {
+                return value;
+            }
+            else if (_globalOptions.TryGetValue(key, out value))
+            {
+                return value;
+            }
+            throw new KeyNotFoundException($"Option '{key}' not found.");
+        }
     }
 }

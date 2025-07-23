@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Unity.InferenceEngine;
 using UnityEngine;
 
-namespace XrAiYolo
+namespace XrAiAccelerator
 {
     public class YoloAssets : XrAiAssets
     {

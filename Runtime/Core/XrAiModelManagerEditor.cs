@@ -4,10 +4,12 @@ using UnityEditor;
 using System.IO;
 using System.Linq;
 
-[CustomEditor(typeof(XrAiModelManager))]
-public class XrAiModelManagerEditor : Editor
+namespace XrAiAccelerator
 {
-    private XrAiModelManager _manager;
+    [CustomEditor(typeof(XrAiModelManager))]
+    public class XrAiModelManagerEditor : Editor
+    {
+        private XrAiModelManager _manager;
 
     void OnEnable()
     {
@@ -156,5 +158,6 @@ public class XrAiModelManagerEditor : Editor
             AssetDatabase.Refresh();
         }
     }
+}
 }
 #endif

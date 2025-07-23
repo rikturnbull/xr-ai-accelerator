@@ -2,7 +2,10 @@ using UnityEngine;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-public interface IXrAiTextToImage
+namespace XrAiAccelerator
 {
-    public Task<XrAiResult<Texture2D>> Execute(Dictionary<string, string> options = null);
+    public interface IXrAiTextToImage
+    {
+        public Task<XrAiResult<Texture2D>> Execute(Dictionary<string, string> options = null);
+    }
 }

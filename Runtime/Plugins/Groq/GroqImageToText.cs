@@ -1,10 +1,10 @@
 using System;
 using System.Threading.Tasks;
-using GroqApiLibrary;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
+using GroqApiLibrary;
 
-namespace XrAiGroq
+namespace XrAiAccelerator
 {
     public class GroqImageToText : IXrAiImageToText
     {
@@ -19,9 +19,10 @@ namespace XrAiGroq
 
         public async Task<XrAiResult<string>> Execute(byte[] imageBytes, string imageFormat, Dictionary<string, string> options = null)
         {
-            try {
+            try
+            {
                 string model = GetOption("model", options);
-                string prompt = GetOption("prompt", options); 
+                string prompt = GetOption("prompt", options);
                 string result = await Execute(imageBytes, imageFormat, prompt, model);
                 return XrAiResult.Success(result);
             }
