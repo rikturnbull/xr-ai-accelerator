@@ -1,5 +1,7 @@
 # Unity XR AI Accelerator Library
 
+Documenation https://rikturnbull.github.io/xr-ai-accelerator/.
+
 This is an API for various AI Model pipelines for use in Unity XR prototypes. Plugin providers can implement this API to expose their models via a standard interface.
 
 The intention is to provide a simplified API for building XR prototypes in Unity.
@@ -44,21 +46,17 @@ The following plugins are provided:
    - Go to **Edit > Project Settings**
    - Select **Package Manager** from the left panel
    - Under **Scoped Registries**, click the **+** button to add new registries
-   - Add the first registry:
-     - **Name**: `package.openupm.com (nuget)`
-     - **URL**: `https://package.openupm.com`
-     - **Scope(s)**: `com.github-glitchenzo.nugetforunity`
-   - Click **+** again and add the second registry:
+   - Click **+** to add a registry:
      - **Name**: `package.openupm.com (openai)`
      - **URL**: `https://package.openupm.com`
      - **Scope(s)**: `com.openai` and `com.utilities` (add each scope separately)
    - Click **Save**
 
-2. **Install from Git URL** - In Unity Editor:
+2. **Add Package via Git URL** - In Unity Editor:
    - Go to **Window > Package Manager**
    - Click the **+** button in the top-left corner
    - Select **Add package from git URL...**
-   - Enter: `https://github.com/siccity/gltfutility.git`
+   - Enter: `https://github.com/rikturnbull/xr-ai-accelerator.git`
    - Click **Add**
 
 3. **Copy Configuration File** - **Important**:
@@ -69,7 +67,7 @@ The following plugins are provided:
 
 ## Security Considerations
 
-**Important**: If you store API keys in a `Resources/XrAiApiKeys.txt` file, you must add this file to your `.gitignore` to prevent accidentally committing sensitive API keys to version control.
+**Important**: IXrAiModelManager stores API keys in `Resources/XrAiApiKeys.txt` file, you must add this file to your `.gitignore` to prevent accidentally committing sensitive API keys to version control.
 
 Add the following line to your `.gitignore` file:
 ```
