@@ -1,5 +1,7 @@
 # Unity XR AI Accelerator Library
 
+Documenation https://rikturnbull.github.io/xr-ai-accelerator/.
+
 This is an API for various AI Model pipelines for use in Unity XR prototypes. Plugin providers can implement this API to expose their models via a standard interface.
 
 The intention is to provide a simplified API for building XR prototypes in Unity.
