@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.Json.Nodes;
-using System.Text.Json;
 using System.Threading.Tasks;
 using System.Net.Http;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace GroqApiLibrary
 {
@@ -34,17 +34,17 @@ namespace GroqApiLibrary
 
         public async Task<string> GenerateAsync(string prompt)
         {
-            var request = new JsonObject
+            var request = new JObject
             {
                 ["model"] = _model,
-                ["messages"] = JsonSerializer.SerializeToNode(new[]
+                ["messages"] = JArray.FromObject(new[]
                 {
                 new { role = "user", content = prompt }
             })
             };
 
             var response = await _client.CreateChatCompletionAsync(request);
-            return response?["choices"]?[0]?["message"]?["content"]?.GetValue<string>() ?? string.Empty;
+            return response?["choices"]?[0]?["message"]?["content"]?.Value<string>() ?? string.Empty;
         }
 
         public void Dispose()

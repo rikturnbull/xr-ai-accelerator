@@ -4,11 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace GroqApiLibrary
 {
@@ -45,9 +44,11 @@ namespace GroqApiLibrary
             return Convert.ToBase64String(imageBytes);
         }
 
-        public async Task<JsonObject?> CreateChatCompletionAsync(JsonObject request)
+        public async Task<JObject> CreateChatCompletionAsync(JObject request)
         {
-            var response = await _httpClient.PostAsJsonAsync(BaseUrl + ChatCompletionsEndpoint, request);
+            var json = JsonConvert.SerializeObject(request);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync(BaseUrl + ChatCompletionsEndpoint, content);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -55,19 +56,20 @@ namespace GroqApiLibrary
                 throw new HttpRequestException($"API request failed with status code {response.StatusCode}. Response content: {errorContent}");
             }
 
-            return await response.Content.ReadFromJsonAsync<JsonObject>();
+            var responseContent = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<JObject>(responseContent);
         }
 
-        public async IAsyncEnumerable<JsonObject?> CreateChatCompletionStreamAsync(JsonObject request)
+        public async IAsyncEnumerable<JObject> CreateChatCompletionStreamAsync(JObject request)
         {
             request["stream"] = true;
-            var content = new StringContent(request.ToJsonString(), Encoding.UTF8, "application/json");
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
             using var requestMessage = new HttpRequestMessage(HttpMethod.Post, BaseUrl + ChatCompletionsEndpoint) { Content = content };
             using var response = await _httpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead);
             response.EnsureSuccessStatusCode();
             using var stream = await response.Content.ReadAsStreamAsync();
             using var reader = new System.IO.StreamReader(stream);
-            string? line;
+            string line;
             while ((line = await reader.ReadLineAsync()) != null)
             {
                 if (line.StartsWith("data: "))
@@ -75,14 +77,14 @@ namespace GroqApiLibrary
                     var data = line["data: ".Length..];
                     if (data != "[DONE]")
                     {
-                        yield return JsonSerializer.Deserialize<JsonObject>(data);
+                        yield return JsonConvert.DeserializeObject<JObject>(data);
                     }
                 }
             }
         }
 
-        public async Task<JsonObject?> CreateTranscriptionAsync(Stream audioFile, string fileName, string model,
-            string? prompt = null, string responseFormat = "json", string? language = null, float? temperature = null)
+        public async Task<JObject> CreateTranscriptionAsync(Stream audioFile, string fileName, string model,
+            string prompt = null, string responseFormat = "json", string language = null, float? temperature = null)
         {
             using var content = new MultipartFormDataContent();
             content.Add(new StreamContent(audioFile), "file", fileName);
@@ -101,11 +103,12 @@ namespace GroqApiLibrary
 
             var response = await _httpClient.PostAsync(BaseUrl + TranscriptionsEndpoint, content);
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<JsonObject>();
+            var responseContent = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<JObject>(responseContent);
         }
 
-        public async Task<JsonObject?> CreateTranslationAsync(Stream audioFile, string fileName, string model,
-            string? prompt = null, string responseFormat = "json", float? temperature = null)
+        public async Task<JObject> CreateTranslationAsync(Stream audioFile, string fileName, string model,
+            string prompt = null, string responseFormat = "json", float? temperature = null)
         {
             using var content = new MultipartFormDataContent();
             content.Add(new StreamContent(audioFile), "file", fileName);
@@ -121,16 +124,17 @@ namespace GroqApiLibrary
 
             var response = await _httpClient.PostAsync(BaseUrl + TranslationsEndpoint, content);
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<JsonObject>();
+            var responseContent = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<JObject>(responseContent);
         }
 
-        public async Task<JsonObject?> CreateVisionCompletionAsync(JsonObject request)
+        public async Task<JObject> CreateVisionCompletionAsync(JObject request)
         {
             ValidateVisionModel(request);
             return await CreateChatCompletionAsync(request);
         }
 
-        public async Task<JsonObject?> CreateVisionCompletionWithImageUrlAsync(
+        public async Task<JObject> CreateVisionCompletionWithImageUrlAsync(
             string imageUrl,
             string prompt,
             string model = "llama-3.2-90b-vision-preview",
@@ -138,25 +142,25 @@ namespace GroqApiLibrary
         {
             ValidateImageUrl(imageUrl);
 
-            var request = new JsonObject
+            var request = new JObject
             {
                 ["model"] = model,
-                ["messages"] = new JsonArray
+                ["messages"] = new JArray
                 {
-                    new JsonObject
+                    new JObject
                     {
                         ["role"] = "user",
-                        ["content"] = new JsonArray
+                        ["content"] = new JArray
                         {
-                            new JsonObject
+                            new JObject
                             {
                                 ["type"] = "text",
                                 ["text"] = prompt
                             },
-                            new JsonObject
+                            new JObject
                             {
                                 ["type"] = "image_url",
-                                ["image_url"] = new JsonObject
+                                ["image_url"] = new JObject
                                 {
                                     ["url"] = imageUrl
                                 }
@@ -174,7 +178,7 @@ namespace GroqApiLibrary
             return await CreateVisionCompletionAsync(request);
         }
 
-        public async Task<JsonObject?> CreateVisionCompletionWithBase64ImageAsync(
+        public async Task<JObject> CreateVisionCompletionWithBase64ImageAsync(
             string imagePath,
             string prompt,
             string model = "llama-3.2-90b-vision-preview",
@@ -183,25 +187,25 @@ namespace GroqApiLibrary
             var base64Image = await ConvertImageToBase64(imagePath);
             ValidateBase64Size(base64Image);
 
-            var request = new JsonObject
+            var request = new JObject
             {
                 ["model"] = model,
-                ["messages"] = new JsonArray
+                ["messages"] = new JArray
                 {
-                    new JsonObject
+                    new JObject
                     {
                         ["role"] = "user",
-                        ["content"] = new JsonArray
+                        ["content"] = new JArray
                         {
-                            new JsonObject
+                            new JObject
                             {
                                 ["type"] = "text",
                                 ["text"] = prompt
                             },
-                            new JsonObject
+                            new JObject
                             {
                                 ["type"] = "image_url",
-                                ["image_url"] = new JsonObject
+                                ["image_url"] = new JObject
                                 {
                                     ["url"] = $"data:image/jpeg;base64,{base64Image}"
                                 }
@@ -219,7 +223,7 @@ namespace GroqApiLibrary
             return await CreateVisionCompletionAsync(request);
         }
 
-        public async Task<JsonObject?> CreateVisionCompletionWithTempBase64ImageAsync(
+        public async Task<JObject> CreateVisionCompletionWithTempBase64ImageAsync(
             string base64Image,
             string prompt,
             string model = "llama-3.2-90b-vision-preview",
@@ -227,25 +231,25 @@ namespace GroqApiLibrary
         {
             ValidateBase64Size(base64Image);
 
-            var request = new JsonObject
+            var request = new JObject
             {
                 ["model"] = model,
-                ["messages"] = new JsonArray
+                ["messages"] = new JArray
                 {
-                    new JsonObject
+                    new JObject
                     {
                         ["role"] = "user",
-                        ["content"] = new JsonArray
+                        ["content"] = new JArray
                         {
-                            new JsonObject
+                            new JObject
                             {
                                 ["type"] = "text",
                                 ["text"] = prompt
                             },
-                            new JsonObject
+                            new JObject
                             {
                                 ["type"] = "image_url",
-                                ["image_url"] = new JsonObject
+                                ["image_url"] = new JObject
                                 {
                                     ["url"] = $"data:image/jpeg;base64,{base64Image}"
                                 }
@@ -263,7 +267,7 @@ namespace GroqApiLibrary
             return await CreateVisionCompletionAsync(request);
         }
 
-        public async Task<JsonObject?> CreateVisionCompletionWithToolsAsync(
+        public async Task<JObject> CreateVisionCompletionWithToolsAsync(
             string imageUrl,
             string prompt,
             List<Tool> tools,
@@ -271,25 +275,25 @@ namespace GroqApiLibrary
         {
             ValidateImageUrl(imageUrl);
 
-            var request = new JsonObject
+            var request = new JObject
             {
                 ["model"] = model,
-                ["messages"] = new JsonArray
+                ["messages"] = new JArray
                 {
-                    new JsonObject
+                    new JObject
                     {
                         ["role"] = "user",
-                        ["content"] = new JsonArray
+                        ["content"] = new JArray
                         {
-                            new JsonObject
+                            new JObject
                             {
                                 ["type"] = "text",
                                 ["text"] = prompt
                             },
-                            new JsonObject
+                            new JObject
                             {
                                 ["type"] = "image_url",
-                                ["image_url"] = new JsonObject
+                                ["image_url"] = new JObject
                                 {
                                     ["url"] = imageUrl
                                 }
@@ -297,7 +301,7 @@ namespace GroqApiLibrary
                         }
                     }
                 },
-                ["tools"] = JsonSerializer.SerializeToNode(tools.Select(t => new
+                ["tools"] = JArray.FromObject(tools.Select(t => new
                 {
                     type = t.Type,
                     function = new
@@ -313,32 +317,32 @@ namespace GroqApiLibrary
             return await CreateVisionCompletionAsync(request);
         }
 
-        public async Task<JsonObject?> CreateVisionCompletionWithJsonModeAsync(
+        public async Task<JObject> CreateVisionCompletionWithJsonModeAsync(
             string imageUrl,
             string prompt,
             string model = "llama-3.2-90b-vision-preview")
         {
             ValidateImageUrl(imageUrl);
 
-            var request = new JsonObject
+            var request = new JObject
             {
                 ["model"] = model,
-                ["messages"] = new JsonArray
+                ["messages"] = new JArray
                 {
-                    new JsonObject
+                    new JObject
                     {
                         ["role"] = "user",
-                        ["content"] = new JsonArray
+                        ["content"] = new JArray
                         {
-                            new JsonObject
+                            new JObject
                             {
                                 ["type"] = "text",
                                 ["text"] = prompt
                             },
-                            new JsonObject
+                            new JObject
                             {
                                 ["type"] = "image_url",
-                                ["image_url"] = new JsonObject
+                                ["image_url"] = new JObject
                                 {
                                     ["url"] = imageUrl
                                 }
@@ -346,19 +350,19 @@ namespace GroqApiLibrary
                         }
                     }
                 },
-                ["response_format"] = new JsonObject { ["type"] = "json_object" }
+                ["response_format"] = new JObject { ["type"] = "json_object" }
             };
 
             return await CreateVisionCompletionAsync(request);
         }
 
-        public async Task<JsonObject?> ListModelsAsync()
+        public async Task<JObject> ListModelsAsync()
         {
             HttpResponseMessage response = await _httpClient.GetAsync($"{BaseUrl}/models");
             response.EnsureSuccessStatusCode();
 
             string responseString = await response.Content.ReadAsStringAsync();
-            JsonObject? responseJson = JsonSerializer.Deserialize<JsonObject>(responseString);
+            JObject responseJson = JsonConvert.DeserializeObject<JObject>(responseString);
 
             return responseJson;
         }
@@ -367,25 +371,25 @@ namespace GroqApiLibrary
         {
             try
             {
-                var messages = new List<JsonObject>
+                var messages = new List<JObject>
                 {
-                    new JsonObject
+                    new JObject
                     {
                         ["role"] = "system",
                         ["content"] = systemMessage
                     },
-                    new JsonObject
+                    new JObject
                     {
                         ["role"] = "user",
                         ["content"] = userPrompt
                     }
                 };
 
-                var request = new JsonObject
+                var request = new JObject
                 {
                     ["model"] = model,
-                    ["messages"] = JsonSerializer.SerializeToNode(messages),
-                    ["tools"] = JsonSerializer.SerializeToNode(tools.Select(t => new
+                    ["messages"] = JArray.FromObject(messages),
+                    ["tools"] = JArray.FromObject(tools.Select(t => new
                     {
                         type = t.Type,
                         function = new
@@ -398,20 +402,20 @@ namespace GroqApiLibrary
                     ["tool_choice"] = "auto"
                 };
 
-                Console.WriteLine($"Sending request to API: {JsonSerializer.Serialize(request, new JsonSerializerOptions { WriteIndented = true })}");
+                Console.WriteLine($"Sending request to API: {JsonConvert.SerializeObject(request, Formatting.Indented)}");
 
                 var response = await CreateChatCompletionAsync(request);
-                var responseMessage = response?["choices"]?[0]?["message"]?.AsObject();
-                var toolCalls = responseMessage?["tool_calls"]?.AsArray();
+                var responseMessage = response?["choices"]?[0]?["message"] as JObject;
+                var toolCalls = responseMessage?["tool_calls"] as JArray;
 
                 if (toolCalls != null && toolCalls.Count > 0)
                 {
                     messages.Add(responseMessage);
                     foreach (var toolCall in toolCalls)
                     {
-                        var functionName = toolCall?["function"]?["name"]?.GetValue<string>();
-                        var functionArgs = toolCall?["function"]?["arguments"]?.GetValue<string>();
-                        var toolCallId = toolCall?["id"]?.GetValue<string>();
+                        var functionName = toolCall?["function"]?["name"]?.Value<string>();
+                        var functionArgs = toolCall?["function"]?["arguments"]?.Value<string>();
+                        var toolCallId = toolCall?["id"]?.Value<string>();
 
                         if (!string.IsNullOrEmpty(functionName) && !string.IsNullOrEmpty(functionArgs))
                         {
@@ -419,7 +423,7 @@ namespace GroqApiLibrary
                             if (tool != null)
                             {
                                 var functionResponse = await tool.Function.ExecuteAsync(functionArgs);
-                                messages.Add(new JsonObject
+                                messages.Add(new JObject
                                 {
                                     ["tool_call_id"] = toolCallId,
                                     ["role"] = "tool",
@@ -430,12 +434,12 @@ namespace GroqApiLibrary
                         }
                     }
 
-                    request["messages"] = JsonSerializer.SerializeToNode(messages);
+                    request["messages"] = JArray.FromObject(messages);
                     var secondResponse = await CreateChatCompletionAsync(request);
-                    return secondResponse?["choices"]?[0]?["message"]?["content"]?.GetValue<string>() ?? string.Empty;
+                    return secondResponse?["choices"]?[0]?["message"]?["content"]?.Value<string>() ?? string.Empty;
                 }
 
-                return responseMessage?["content"]?.GetValue<string>() ?? string.Empty;
+                return responseMessage?["content"]?.Value<string>() ?? string.Empty;
             }
             catch (HttpRequestException ex)
             {
@@ -454,9 +458,9 @@ namespace GroqApiLibrary
             }
         }
 
-        private void ValidateVisionModel(JsonObject request)
+        private void ValidateVisionModel(JObject request)
         {
-            var model = request["model"]?.GetValue<string>();
+            var model = request["model"]?.Value<string>();
             if (string.IsNullOrEmpty(model) || !VisionModels.Contains(model))
             {
                 throw new ArgumentException($"Invalid vision model. Must be one of: {VisionModels}");
@@ -499,7 +503,7 @@ namespace GroqApiLibrary
     {
         public string Name { get; set; }
         public string Description { get; set; }
-        public JsonObject Parameters { get; set; }
+        public JObject Parameters { get; set; }
         public Func<string, Task<string>> ExecuteAsync { get; set; }
     }
 }
