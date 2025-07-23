@@ -4,6 +4,7 @@
   "displayName": "XRAI Accelerator",
   "description": "A custom package for accelerating XR AI development in Unity.",
   "dependencies": {
-    "com.openai.unity": "8.8.1"
+    "com.openai.unity": "8.8.1",
+    "com.unity.ai.inference": "2.2.1"
   }
 }
