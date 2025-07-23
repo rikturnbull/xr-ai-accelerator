@@ -1,8 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Text.Json.Nodes;
 using GroqApiLibrary;
+using Newtonsoft.Json.Linq;
 
 namespace XrAiAccelerator
 {
@@ -40,7 +40,7 @@ namespace XrAiAccelerator
             }
             string base64Image = Convert.ToBase64String(imageBytes);
 
-            JsonObject response = await _groqApi.CreateVisionCompletionWithTempBase64ImageAsync(base64Image, prompt, model);
+            JObject response = await _groqApi.CreateVisionCompletionWithTempBase64ImageAsync(base64Image, prompt, model);
 
             return response?["choices"]?[0]?["message"]?["content"]?.ToString();
         }
