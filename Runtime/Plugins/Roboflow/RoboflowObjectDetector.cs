@@ -23,9 +23,8 @@ namespace XrAiAccelerator
             try
             {
                 string apiKey = GetOption("apiKey", options);
-                string modelEndpoint = GetOption("modelEndpoint", options); //coco/37
                 string url = GetOption("url", options);
-                return await Execute(texture, apiKey, url, modelEndpoint);
+                return await Execute(texture, apiKey, url);
             }
             catch (Exception ex)
             {
@@ -33,7 +32,7 @@ namespace XrAiAccelerator
             }
         }
 
-        private async Task<XrAiResult<XrAiBoundingBox[]>> Execute(Texture2D texture, string apiKey, string url, string modelEndpoint)
+        private async Task<XrAiResult<XrAiBoundingBox[]>> Execute(Texture2D texture, string apiKey, string url)
         {
             try
             {
