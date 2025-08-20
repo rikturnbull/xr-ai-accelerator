@@ -1,5 +1,3 @@
-using System;
-
 namespace XrAiAccelerator
 {
     public abstract class XrAiResult

@@ -16,6 +16,59 @@ namespace XrAiAccelerator
             }
         }
 
+        public static void DrawKeypoints(Transform parent, XrAiBoundingBox[] boundingBoxes, Vector2 imageDimensions = default, Vector2 canvasDimensions = default)
+        {
+            foreach (var box in boundingBoxes)
+            {
+                DrawKeypoints(parent, box.Keypoints, imageDimensions, canvasDimensions);
+            }
+        }
+
+        private static void DrawKeypoints(Transform parent, XrAiKeypoint[] keypoints, Vector2 imageDimensions = default, Vector2 canvasDimensions = default)
+        {
+            imageDimensions = imageDimensions == default ? new Vector2(1.0f, 1.0f) : imageDimensions;
+            canvasDimensions = canvasDimensions == default ? new Vector2(1.0f, 1.0f) : canvasDimensions;
+
+            foreach (var keypoint in keypoints)
+            {
+                DrawKeypoint(parent, keypoint, imageDimensions, canvasDimensions);
+            }
+        }
+
+        private static void DrawKeypoint(Transform parent, XrAiKeypoint keypoint, Vector2 imageDimensions, Vector2 canvasDimensions)
+        {
+            GameObject pointObject = new(keypoint.@class ?? "Keypoint");
+            pointObject.transform.SetParent(parent, false);
+
+            float normX = keypoint.x / imageDimensions.x;
+            float normY = keypoint.y / imageDimensions.y;
+            normY = 1 - normY; // Invert Y for Unity's coordinate system
+
+            float centeredX = normX - 0.5f;
+            float centeredY = normY - 0.5f;
+
+            float unityX = centeredX * canvasDimensions.x;
+            float unityY = centeredY * canvasDimensions.y;
+
+            // Create a small sphere to represent the keypoint
+            GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            sphere.transform.SetParent(pointObject.transform);
+            sphere.transform.localScale = new Vector3(0.002f, 0.002f, 0.002f); // Small size
+            sphere.transform.localPosition = new Vector3(unityX, unityY, 0f); // Slightly above the plane
+
+            // Set color based on confidence
+            Color color = Color.Lerp(Color.red, Color.green, keypoint.confidence);
+            Renderer renderer = sphere.GetComponent<Renderer>();
+            renderer.material.color = color;
+
+            // // Add label
+            // TextMeshPro label = pointObject.AddComponent<TextMeshPro>();
+            // label.text = $"{keypoint.@class} ({keypoint.confidence:P1})";
+            // label.fontSize = 0.1f;
+            // label.alignment = TextAlignmentOptions.Center;
+            // label.transform.localPosition = new Vector3(0, 0.02f, 0); // Position above the sphere
+        }
+
         public static void DrawBoxes(Transform parent, XrAiBoundingBox[] boundingBoxes, Vector2 scale = default, Vector2 dimensions = default)
         {
             scale = scale == default ? new Vector2(1.0f, 1.0f) : scale;

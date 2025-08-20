@@ -1,61 +1,60 @@
+using Newtonsoft.Json;
+using OpenAI;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using UnityEngine;
 
 namespace XrAiAccelerator
 {
     #region Main Class
+    [XrAiProvider("Roboflow")]
+    [XrAiOption("apiKey", XrAiOptionScope.Global, isRequired: true, description: "Roboflow API key for authentication")]
+    [XrAiOption("url", XrAiOptionScope.Workflow, isRequired: true, defaultValue: "https://serverless.roboflow.com/infer/workflows/xr-shu81/yolov11-object-detection", description: "The URL for the Roboflow API endpoint")]  
+    [XrAiOption("modelId", XrAiOptionScope.Workflow, isRequired: false, description: "The model id to use for object detection")]
     public class RoboflowObjectDetector : IXrAiObjectDetector
     {
-        private HttpClient _client = new HttpClient();
-        Dictionary<string, string> _globalOptions = new();
+        private HttpClient _httpClient = new HttpClient();
+        private Dictionary<string, string> _globalOptions = new Dictionary<string, string>();
 
-        public RoboflowObjectDetector(Dictionary<string, string> options = null)
+        public Task Initialize(Dictionary<string, string> options = null, XrAiAssets assets = null)
         {
-            _globalOptions = options;
+            _globalOptions = options ?? new Dictionary<string, string>();
+            return Task.CompletedTask;
         }
 
-        public async Task<XrAiResult<XrAiBoundingBox[]>> Execute(Texture2D texture, Dictionary<string, string> options = null)
+        public async Task Execute(Texture2D texture, Dictionary<string, string> options, Action<XrAiResult<XrAiBoundingBox[]>> callback)
+        {
+            byte[] imageBytes = XrAiImageHelper.EncodeTexture(texture, "image/jpeg");
+            int imageWidth = texture.width;
+            int imageHeight = texture.height;
+
+            XrAiResult<XrAiBoundingBox[]> result = await ExecuteRoboflowRequest(imageBytes, options);
+
+            callback?.Invoke(
+                result.IsSuccess
+                    ? XrAiResult.Success(result.Data)
+                    : XrAiResult.Failure<XrAiBoundingBox[]>(result.ErrorMessage)
+            );
+        }
+
+        private async Task<XrAiResult<XrAiBoundingBox[]>> ExecuteRoboflowRequest(byte[] imageBytes, Dictionary<string, string> options = null)
         {
             try
             {
                 string apiKey = GetOption("apiKey", options);
                 string url = GetOption("url", options);
-                return await Execute(texture, apiKey, url);
-            }
-            catch (Exception ex)
-            {
-                return XrAiResult.Failure<XrAiBoundingBox[]>(ex.Message);
-            }
-        }
+                string modelId = GetOption("modelId", options, "");
 
-        private async Task<XrAiResult<XrAiBoundingBox[]>> Execute(Texture2D texture, string apiKey, string url)
-        {
-            try
-            {
-                byte[] imageBytes = texture.EncodeToJPG();
                 string base64Image = Convert.ToBase64String(imageBytes);
 
-                var requestBody = new
-                {
-                    api_key = apiKey,
-                    inputs = new
-                    {
-                        image = new
-                        {
-                            type = "base64",
-                            value = base64Image
-                        }
-                    }
-                };
-
-                string jsonContent = JsonConvert.SerializeObject(requestBody);
+                RoboflowRequest requestData = CreateRoboflowRequest(url, base64Image, apiKey, modelId);
+                string jsonContent = JsonConvert.SerializeObject(requestData);
                 var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
 
-                HttpResponseMessage response = await _client.PostAsync(url, content);
+                HttpResponseMessage response = await _httpClient.PostAsync(url, content);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -64,8 +63,8 @@ namespace XrAiAccelerator
                 }
 
                 string result = await response.Content.ReadAsStringAsync();
-                RoboflowObjectDetectorResults roboflowResult = JsonConvert.DeserializeObject<RoboflowObjectDetectorResults>(result);
-                return ConvertToXrAiObjectDetectorResult(roboflowResult);
+
+                return ParseRoboflowObjectDetectionResponse(url, result);
             }
             catch (Exception ex)
             {
@@ -73,24 +72,110 @@ namespace XrAiAccelerator
             }
         }
 
-        private XrAiResult<XrAiBoundingBox[]> ConvertToXrAiObjectDetectorResult(RoboflowObjectDetectorResults roboflowResult)
+        private RoboflowRequest CreateRoboflowRequest(string url, string base64Image, string apiKey, string modelId)
         {
-            List<XrAiBoundingBox> boundingBoxes = new List<XrAiBoundingBox>();
-            foreach (var prediction in roboflowResult.outputs[0].model_predictions.predictions)
+            if (url.Contains("serverless.roboflow.com"))
             {
-                boundingBoxes.Add(new XrAiBoundingBox
-                {
-                    CenterX = prediction.x,
-                    CenterY = prediction.y,
-                    Width = prediction.width,
-                    Height = prediction.height,
-                    ClassName = prediction.@class
-                });
+                return CreateRoboflowServerlessRequest(base64Image, apiKey);
             }
-            return XrAiResult.Success(boundingBoxes.ToArray());;
+            else
+            {
+                return CreateRoboflowInferenceRequest(base64Image, apiKey, modelId);
+            }
         }
 
-        private string GetOption(string key, Dictionary<string, string> options = null)
+        private RoboflowInferenceRequest CreateRoboflowInferenceRequest(string base64Image, string apiKey, string modelId)
+        {
+            return new RoboflowInferenceRequest
+            {
+                api_key = apiKey,
+                model_id = modelId,
+                image = new RoboflowRequestImage
+                {
+                    type = "base64",
+                    value = base64Image
+                }
+            };
+        }
+
+        private RoboflowServerlessRequest CreateRoboflowServerlessRequest(string base64Image, string apiKey)
+        {
+            return new RoboflowServerlessRequest
+            {
+                api_key = apiKey,
+                inputs = new RoboflowRequestInputs
+                {
+                    image = new RoboflowRequestImage
+                    {
+                        type = "base64",
+                        value = base64Image
+                    }
+                }
+            };
+        }
+
+        private XrAiResult<XrAiBoundingBox[]> ParseRoboflowObjectDetectionResponse(string url, string responseText)
+        {
+            List<XrAiBoundingBox> boundingBoxes = new List<XrAiBoundingBox>();
+
+            Debug.Log($"Roboflow response: {responseText}");
+            try
+            {
+                RoboflowPredictions roboflowResult;
+                if (url.Contains("serverless.roboflow.com"))
+                {
+                    roboflowResult = JsonConvert.DeserializeObject<RoboflowServerlessResponse>(responseText).outputs[0].model_predictions;
+                }
+                else
+                {
+                    roboflowResult = JsonConvert.DeserializeObject<RoboflowPredictions>(responseText);
+                }
+
+                if (roboflowResult?.predictions != null && roboflowResult.predictions.Count > 0)
+                {
+                    foreach (RoboflowDetection prediction in roboflowResult.predictions)
+                    {
+                        List<XrAiKeypoint> keypointsList = new();
+
+                        // Check if keypoints exist before iterating
+                        if (prediction.keypoints != null)
+                        {
+                            foreach (RoboflowKeypoint keypoints in prediction.keypoints)
+                            {
+                                XrAiKeypoint keypoint = new()
+                                {
+                                    x = keypoints.x,
+                                    y = keypoints.y,
+                                    confidence = keypoints.confidence,
+                                    class_id = keypoints.class_id,
+                                    @class = keypoints.@class
+                                };
+                                keypointsList.Add(keypoint);
+                            }
+                        }
+                        XrAiBoundingBox boundingBox = new XrAiBoundingBox
+                        {
+                            CenterX = prediction.x,
+                            CenterY = prediction.y,
+                            Width = prediction.width,
+                            Height = prediction.height,
+                            ClassName = prediction.@class ?? "unknown",
+                            Keypoints = keypointsList.ToArray()
+                        };
+                        boundingBoxes.Add(boundingBox);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error parsing Roboflow object detection response: {ex.Message}");
+                return XrAiResult.Failure<XrAiBoundingBox[]>($"Failed to parse response: {ex.Message}");
+            }
+
+            return XrAiResult.Success(boundingBoxes.ToArray());
+        }
+
+        private string GetOption(string key, Dictionary<string, string> options = null, String defaultValue = null)
         {
             if (options != null && options.TryGetValue(key, out string value))
             {
@@ -100,50 +185,12 @@ namespace XrAiAccelerator
             {
                 return value;
             }
+            if(defaultValue != null)
+            {
+                return defaultValue;
+            }
             throw new KeyNotFoundException($"Option '{key}' not found.");
         }
-
-        #region JSON Classes   
-        [Serializable]
-        private class RoboflowObjectDetectorResults
-        {
-            public List<RoboflowObjectDetectorOutput> outputs;
-        }
-
-        [Serializable]
-        private class RoboflowObjectDetectorOutput
-        {
-            public RoboflowObjectDetectorModelPredictions model_predictions;
-        }
-
-        [Serializable]
-        private class RoboflowObjectDetectorModelPredictions
-        {
-            public RoboflowObjectDetectorImage image;
-            public List<RoboflowObjectDetectorPredictions> predictions;
-        }
-
-        [Serializable]
-        private class RoboflowObjectDetectorImage
-        {
-            public float width;
-            public float height;
-        }
-
-        [Serializable]
-        private class RoboflowObjectDetectorPredictions
-        {
-            public float x;
-            public float y;
-            public float width;
-            public float height;
-            public string @class;
-            public float confidence;
-            public int class_id;
-            public string detection_id;
-            public string parent_id;
-        }
-        #endregion
     }
     #endregion
 }

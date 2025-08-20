@@ -23,7 +23,7 @@ namespace XrAiAccelerator
         EditorGUILayout.Space();
 
         // Draw properties organized by sections
-        foreach (var section in XrAiModelManager.ARTIFACT_SECTIONS)
+        foreach (var section in XrAiModelManager.GLOBAL_SECTION)
         {
             EditorGUILayout.LabelField(GetSectionDisplayName(section.Key), EditorStyles.boldLabel);
             EditorGUILayout.BeginVertical("box");
@@ -65,6 +65,14 @@ namespace XrAiAccelerator
             _manager.LoadFromFile();
             Repaint();
         }
+
+        if (GUILayout.Button("Scan"))
+        {
+            XrAiModelManager.ReInitialize();
+            _manager.LoadFromFile();
+            Repaint();
+        }
+
         EditorGUILayout.EndHorizontal();
 
         if (GUI.changed)
@@ -77,6 +85,7 @@ namespace XrAiAccelerator
     {
         switch (sectionKey)
         {
+            case "AWS": return "AWS";
             case "OpenAI": return "OpenAI";
             case "StabilityAi": return "Stability AI";
             case "Google": return "Google";

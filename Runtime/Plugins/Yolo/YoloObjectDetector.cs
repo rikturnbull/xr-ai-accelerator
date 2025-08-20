@@ -5,49 +5,21 @@ using UnityEngine;
 
 namespace XrAiAccelerator
 {
+    [XrAiProvider("Yolo")]
     public class YoloObjectDetector : IXrAiObjectDetector
     {
-        private Dictionary<string, string> _globalOptions = new();
         private YoloExecutor _yoloExecutor;
 
-        public YoloObjectDetector(XrAiAssets assets, Dictionary<string, string> options = null)
+        public async Task Initialize(Dictionary<string, string> options = null, XrAiAssets assets = null)
         {
-            _globalOptions = options;
-
             YoloAssets yoloAssets = assets as YoloAssets;
-            GameObject yoloExecutorObject = new("YoloExecutor");
-            _yoloExecutor = yoloExecutorObject.AddComponent<YoloExecutor>();
-            _yoloExecutor.LoadModel(yoloAssets);
+            _yoloExecutor = new YoloExecutor();
+            await _yoloExecutor.LoadModel(yoloAssets);
         }
 
-        public async Task<XrAiResult<XrAiBoundingBox[]>> Execute(Texture2D texture, Dictionary<string, string> options = null)
+        public async Task Execute(Texture2D texture, Dictionary<string, string> options, Action<XrAiResult<XrAiBoundingBox[]>> callback)
         {
-            try
-            {
-                // Wait until _yoloExecutor is ready
-                while (!_yoloExecutor.IsModelLoaded && _yoloExecutor.IsRunning())
-                {
-                    await Task.Yield();
-                }
-
-                // Run inference on the input texture
-                _yoloExecutor.RunInference(texture);
-
-                // Wait for the inference to complete
-                while (_yoloExecutor.IsRunning())
-                {
-                    await Task.Yield();
-                }
-
-                // Get the results from the inference
-                var result = _yoloExecutor.GetResult();
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                return XrAiResult.Failure<XrAiBoundingBox[]>(ex.Message);
-            }
+            await _yoloExecutor.Execute(texture, callback);
         }
     }
 }

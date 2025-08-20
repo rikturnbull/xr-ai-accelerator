@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -7,35 +8,32 @@ using UnityEngine;
 
 namespace XrAiAccelerator
 {
-    public class StabilityAiImageTo3d : IXrAImageTo3d
+    [XrAiProvider("StabilityAi")]
+    [XrAiOption("apiKey", XrAiOptionScope.Global, isRequired: true, description: "Stability AI API key for authentication")]
+    public class StabilityAiImageTo3d : IXrAiImageTo3d
     {
         private Dictionary<string, string> _globalOptions = new();
         private HttpClient _client = new HttpClient();
 
-        public StabilityAiImageTo3d(Dictionary<string, string> options = null)
+        public Task Initialize(Dictionary<string, string> options = null, XrAiAssets assets = null)
         {
-            _globalOptions = options;
+            _globalOptions = options ?? new Dictionary<string, string>();
+            return Task.CompletedTask;
         }
 
-        public async Task<XrAiResult<byte[]>> Execute(Texture2D texture, Dictionary<string, string> options = null)
+        public async Task Execute(Texture2D texture, Dictionary<string, string> options, Action<XrAiResult<byte[]>> callback)
+        {
+            byte[] imageBytes = texture.EncodeToPNG();
+            string apiKey = GetOption("apiKey", options);
+            XrAiResult<byte[]> result = await Execute(imageBytes, apiKey);
+
+            callback?.Invoke(result);
+        }
+
+        private async Task<XrAiResult<byte[]>> Execute(byte[] imageBytes, string apiKey)
         {
             try
             {
-                string apiKey = GetOption("apiKey", options);
-                return await Execute(texture, apiKey);
-            }
-            catch (Exception ex)
-            {
-                return XrAiResult.Failure<byte[]>(ex.Message);                
-            }
-        }
-
-        private async Task<XrAiResult<byte[]>> Execute(Texture2D texture, string apiKey)
-        {
-            try
-            {
-                byte[] imageBytes = texture.EncodeToPNG();
-
                 _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
                 using var form = new MultipartFormDataContent
                 {
@@ -47,7 +45,7 @@ namespace XrAiAccelerator
                 if (!response.IsSuccessStatusCode)
                 {
                     string errorContent = await response.Content.ReadAsStringAsync();
-                    return XrAiResult.Failure<byte[]>($"Request failed with status code {response.StatusCode}: {errorContent}");
+                    return XrAiResult.Failure<byte[]>($"Error in StabilityAI request {response.StatusCode}: {errorContent}");
                 }
 
                 byte[] result = await response.Content.ReadAsByteArrayAsync();

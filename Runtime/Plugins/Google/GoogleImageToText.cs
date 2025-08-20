@@ -1,135 +1,38 @@
-using UnityEngine;
 using System;
-using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Text;
-using System.Net.Http;
-using Newtonsoft.Json;
+using System.Threading.Tasks;
+using UnityEngine;
 
 namespace XrAiAccelerator
 {
 
     #region Main Class
-    public class GoogleImageToText : IXrAiImageToText
+    [XrAiProvider("Google")]
+    [XrAiOption("apiKey", XrAiOptionScope.Global, isRequired: true, description: "Google API key for authentication")]
+    [XrAiOption("url", XrAiOptionScope.Workflow, isRequired: true, defaultValue: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent", description: "The URL for the Google API endpoint")]
+    [XrAiOption("prompt", XrAiOptionScope.Workflow, isRequired: true, defaultValue: "Describe the image", description: "The prompt to use for image-to-text conversion")]
+    public class GoogleImageToText : GoogleAiBase, IXrAiImageToText
     {
-        private HttpClient _httpClient = new();
-        private Dictionary<string, string> _globalOptions = new();
-
-        public GoogleImageToText(Dictionary<string, string> options)
+        public async Task Execute(Texture2D texture, Dictionary<string, string> options, Action<XrAiResult<string>> callback)
         {
-            _globalOptions = options;
-        }
+            await Task.Yield();
+            byte[] imageBytes = texture.EncodeToPNG();
+            await Task.Yield();
 
-        public async Task<XrAiResult<string>> Execute(byte[] imageBytes, string imageFormat, Dictionary<string, string> options = null)
-        {
-            try {
-                string apiKey = GetOption("apiKey", options);
-                string prompt = GetOption("prompt", options);
-                string url = GetOption("url", options);
+            string prompt = GetOption("prompt", options);
 
-                return await Execute(imageBytes, imageFormat, apiKey, url, prompt);
-            }
-            catch (Exception ex)
+            XrAiResult<string> result = await ExecuteGeminiRequest(imageBytes, prompt, options);
+            if (result.IsSuccess)
             {
-                return XrAiResult.Failure<string>(ex.Message);
+                callback?.Invoke(result);
+            }
+            else
+            {
+                callback?.Invoke(
+                    XrAiResult.Failure<string>(result.ErrorMessage)
+                );
             }
         }
-
-
-        private async Task<XrAiResult<string>> Execute(byte[] imageBytes, string imageFormat, string apiKey, string url, string prompt)
-        {
-            string base64Image = Convert.ToBase64String(imageBytes);
-
-            object requestData = new
-            {
-                contents = new[]
-                {
-                    new
-                    {
-                        parts = new object[]
-                        {
-                            new
-                            {
-                                inline_data = new
-                                {
-                                    // mime_type = "image/jpeg",
-                                    mime_type = imageFormat,
-                                    data = base64Image
-                                }
-                            },
-                            new
-                            {
-                                text = prompt
-                            }
-                        }
-                    }
-                }
-            };
-            string jsonData = JsonConvert.SerializeObject(requestData);
-            StringContent content = new(jsonData, Encoding.UTF8, "application/json");
-
-            using HttpRequestMessage request = new(HttpMethod.Post, url);
-            request.Headers.Add("x-goog-api-key", apiKey);
-            request.Content = content;
-
-            HttpResponseMessage response = await _httpClient.SendAsync(request);
-            if (!response.IsSuccessStatusCode)
-            {
-                string errorContent = await response.Content.ReadAsStringAsync();
-                return XrAiResult.Failure<string>($"Error in Google Gemini Vision request: {response.StatusCode} - {errorContent}");
-            }
-
-            string responseText = await response.Content.ReadAsStringAsync();
-
-            GeminiResponse geminiResponse = JsonConvert.DeserializeObject<GeminiResponse>(responseText);
-
-            string resultContent = geminiResponse?.candidates?[0]?.content?.parts?[0]?.text;
-            if (string.IsNullOrEmpty(resultContent))
-            {
-                return XrAiResult.Failure<string>("No content received from Google Gemini API");
-            }
-
-            return XrAiResult.Success(resultContent);
-        }
-
-        private string GetOption(string key, Dictionary<string, string> options = null)
-        {
-            if (options != null && options.TryGetValue(key, out string value))
-            {
-                return value;
-            }
-            else if (_globalOptions.TryGetValue(key, out value))
-            {
-                return value;
-            }
-            throw new KeyNotFoundException($"Option '{key}' not found.");
-        }
-
-        #region JSON Classes
-        [Serializable]
-        private class GeminiResponse
-        {
-            public GeminiCandidate[] candidates;
-        }
-
-        [Serializable]
-        private class GeminiCandidate
-        {
-            public GeminiContent content;
-        }
-
-        [Serializable]
-        private class GeminiContent
-        {
-            public GeminiPart[] parts;
-        }
-
-        [Serializable]
-        private class GeminiPart
-        {
-            public string text;
-        }
-        #endregion
     }
     #endregion
 
