@@ -82,7 +82,7 @@ namespace XrAiAccelerator
         private static void DrawBox(Transform parent, XrAiBoundingBox box, Vector2 scale, Vector2 dimensions, int colorIndex)
         {
             Color boxColor = GetBoxColor(colorIndex);
-            GameObject lineObject = CreateNewBox(parent, boxColor);
+            GameObject lineObject = CreateNewBox(parent, boxColor, dimensions);
 
             float scaledWidth = box.Width * scale.x;
             float scaledHeight = box.Height * scale.y;
@@ -110,9 +110,10 @@ namespace XrAiAccelerator
             // Set label text
             TextMeshPro label = lineObject.GetComponentInChildren<TextMeshPro>();
             label.text = box.ClassName;
-            
-            // Position label above the box center
-            label.transform.localPosition = new Vector3(scaledCenterX - halfWidth, top + 0.005f, -0.01f);
+
+            // get the font height in pixels
+            float labelHeight = label.GetPreferredValues(label.text).y - 0.1f;
+            label.transform.localPosition = new Vector3(scaledCenterX - halfWidth, top + labelHeight, -0.01f);
         }
 
         private static Color GetBoxColor(int index)
@@ -134,7 +135,7 @@ namespace XrAiAccelerator
             return colors[index % colors.Length];
         }
 
-        private static GameObject CreateNewBox(Transform parent, Color color)
+        private static GameObject CreateNewBox(Transform parent, Color color, Vector2 dimensions)
         {
             // Create the box with LineRenderer
             GameObject lineObject = new("ObjectBox");
@@ -144,9 +145,16 @@ namespace XrAiAccelerator
             lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
             lineRenderer.startColor = color;
             lineRenderer.endColor = color;
-            lineRenderer.startWidth = 0.001f;
-            lineRenderer.endWidth = 0.001f;
+            
+            // Calculate line width based on image dimensions
+            float baseWidth = 0.005f;
+            float dimensionMultiplier = (dimensions.x + dimensions.y) / 2f; // Average of image dimensions
+            float lineWidth = baseWidth * dimensionMultiplier;
+            
+            lineRenderer.startWidth = lineWidth;
+            lineRenderer.endWidth = lineWidth;
             lineRenderer.useWorldSpace = false;
+            lineRenderer.sortingOrder = 1;
 
             // Create the label
             GameObject textGameObject = new("ObjectLabel");
@@ -154,9 +162,10 @@ namespace XrAiAccelerator
 
             TextMeshPro textMesh = textGameObject.AddComponent<TextMeshPro>();
             textMesh.color = color;
-            textMesh.fontSize = 0.05f;
+            textMesh.fontSize = 0.5f * dimensionMultiplier; // Scale font size based on image dimensions
             textMesh.alignment = TextAlignmentOptions.Center;
             textMesh.characterSpacing = 0;
+            textMesh.sortingOrder = 1;
 
             return lineObject;
         }
