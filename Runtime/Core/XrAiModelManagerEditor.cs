@@ -32,6 +32,7 @@ namespace XrAiAccelerator
             EditorGUILayout.LabelField("Global Settings", EditorStyles.miniBoldLabel);
             foreach (var key in section.Value)
             {
+                Debug.Log($"Found global property '{key}' for section '{section.Key}'");
                 DrawPropertyByKey(section.Key, key);
             }
             
@@ -95,7 +96,7 @@ namespace XrAiAccelerator
         }
     }
     
-    private void DrawWorkflowSection(string sectionName, string workflowName, string[] properties)
+    private void DrawWorkflowSection(string sectionName, string workflowName, XrAiOptionAttribute[] properties)
     {
         EditorGUILayout.BeginVertical("helpbox");
         EditorGUILayout.LabelField(GetWorkflowDisplayName(workflowName), EditorStyles.boldLabel);
@@ -123,12 +124,13 @@ namespace XrAiAccelerator
         }
     }
 
-    private void DrawPropertyByKey(string sectionName, string key)
+    private void DrawPropertyByKey(string sectionName, XrAiOptionAttribute key)
     {
-        XrAiSection section;
+            XrAiSection section;
         
+        Debug.Log($"Drawing property '{key}' in section '{sectionName}'");
         // Check if it's an API key - use API keys data
-        if (key == "apiKey")
+        if (key.Key == "apiKey")
         {
             section = _manager.ApiKeysData.sections.FirstOrDefault(s => s.sectionName == sectionName);
         }
@@ -138,21 +140,30 @@ namespace XrAiAccelerator
         }
         
         if (section == null)
+        {
+            Debug.LogWarning($"Section '{sectionName}' not found in the configuration.");
             return;
-            
-        var property = section.properties.FirstOrDefault(p => p.key == key);
-        if (property == null) return;
+        }
+
+        XrAiProperty property = section.properties.FirstOrDefault(p => p.key == key.Key);
+        Debug.Log($"Found property '{key}' in section '{sectionName}': {(property != null ? property.value : "null")}");
+        if (property == null)
+        {
+            // If property doesn't exist, create a new one with an empty value
+            property = new XrAiProperty { key = key.Key, value = key.DefaultValue ?? "" };
+            section.properties.Add(property);
+        }
         
         EditorGUILayout.BeginHorizontal();
         
         // Special handling for API keys (password field)
-        if (key == "apiKey")
+        if (key.Key == "apiKey")
         {
-            property.value = EditorGUILayout.PasswordField(key, property.value);
+            property.value = EditorGUILayout.PasswordField(key.Key, property.value);
         }
         else
         {
-            property.value = EditorGUILayout.TextField(key, property.value);
+            property.value = EditorGUILayout.TextField(key.Key, property.value);
         }
         
         EditorGUILayout.EndHorizontal();

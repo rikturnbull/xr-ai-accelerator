@@ -10,6 +10,7 @@ namespace XrAiAccelerator
 {
     [XrAiProvider("StabilityAi")]
     [XrAiOption("apiKey", XrAiOptionScope.Global, isRequired: true, description: "Stability AI API key for authentication")]
+    [XrAiOption("url", XrAiOptionScope.Global, isRequired: true, description: "Stability AI API URL", defaultValue: "https://api.stability.ai/v2beta/3d/stable-fast-3d")]
     public class StabilityAiImageTo3d : IXrAiImageTo3d
     {
         private Dictionary<string, string> _globalOptions = new();
@@ -25,12 +26,13 @@ namespace XrAiAccelerator
         {
             byte[] imageBytes = texture.EncodeToPNG();
             string apiKey = GetOption("apiKey", options);
-            XrAiResult<byte[]> result = await Execute(imageBytes, apiKey);
+            string url = GetOption("url", options);
+            XrAiResult<byte[]> result = await Execute(imageBytes, apiKey, url);
 
             callback?.Invoke(result);
         }
 
-        private async Task<XrAiResult<byte[]>> Execute(byte[] imageBytes, string apiKey)
+        private async Task<XrAiResult<byte[]>> Execute(byte[] imageBytes, string apiKey, string url)
         {
             try
             {
@@ -40,7 +42,7 @@ namespace XrAiAccelerator
                     ImageFormField("image", imageBytes, "image/png", "image.png")
                 };
 
-                HttpResponseMessage response = await _client.PostAsync("https://api.stability.ai/v2beta/3d/stable-fast-3d", form);
+                HttpResponseMessage response = await _client.PostAsync(url, form);
 
                 if (!response.IsSuccessStatusCode)
                 {

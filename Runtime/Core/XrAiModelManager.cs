@@ -33,13 +33,11 @@ namespace XrAiAccelerator
         private XrAiModelData _modelData;
         private XrAiModelData _apiKeysData;
 
-        // Predefined property keys organized by sections
-        public static Dictionary<string, string[]> GLOBAL_SECTION = InitializeGlobalProperties();
+        public static Dictionary<string, XrAiOptionAttribute[]> GLOBAL_SECTION = InitializeGlobalProperties();
 
         private static XrAiModelManager _instance;
 
-        // Workflow-specific properties for each section
-        public static Dictionary<string, Dictionary<string, string[]>> WORKFLOW_PROPERTIES = InitializeWorkflowProperties();
+        public static Dictionary<string, Dictionary<string, XrAiOptionAttribute[]>> WORKFLOW_PROPERTIES = InitializeWorkflowProperties();
 
         public static void ReInitialize()
         {
@@ -47,16 +45,15 @@ namespace XrAiAccelerator
             WORKFLOW_PROPERTIES = InitializeWorkflowProperties();
         }
 
-        private static Dictionary<string, Dictionary<string, string[]>> InitializeWorkflowProperties()
+        private static Dictionary<string, Dictionary<string, XrAiOptionAttribute[]>> InitializeWorkflowProperties()
         {
-            var workflowProperties = new Dictionary<string, Dictionary<string, string[]>>();
+            var workflowProperties = new Dictionary<string, Dictionary<string, XrAiOptionAttribute[]>>();
 
             foreach (var interfaceKvp in XrAiFactory.XrAiInterfaces)
             {
                 var interfaceName = interfaceKvp.Key;
                 var interfaceType = interfaceKvp.Value;
 
-                // Get all provider options for this interface type
                 var allProviderOptions = XrAiFactory.GetAllProviderOptions(interfaceType);
 
                 foreach (var providerKvp in allProviderOptions)
@@ -64,20 +61,18 @@ namespace XrAiAccelerator
                     var providerName = providerKvp.Key;
                     var options = providerKvp.Value;
 
-                    // Filter for workflow and both-scoped options
                     var workflowOptions = options
                         .Where(opt => opt.Scope == XrAiOptionScope.Workflow || opt.Scope == XrAiOptionScope.Both)
-                        .Select(opt => opt.Key)
+                        .Select(opt => opt)
                         .ToArray();
 
                     if (workflowOptions.Length > 0)
                     {
                         if (!workflowProperties.ContainsKey(providerName))
                         {
-                            workflowProperties[providerName] = new Dictionary<string, string[]>();
+                            workflowProperties[providerName] = new Dictionary<string, XrAiOptionAttribute[]>();
                         }
 
-                        // Map interface name to workflow constant
                         workflowProperties[providerName][interfaceName] = workflowOptions;
                     }
                 }
@@ -86,12 +81,11 @@ namespace XrAiAccelerator
             return workflowProperties;
         }
 
-        private static Dictionary<string, string[]> InitializeGlobalProperties()
+        private static Dictionary<string, XrAiOptionAttribute[]> InitializeGlobalProperties()
         {
-            var globalProperties = new Dictionary<string, string[]>();
+            var globalProperties = new Dictionary<string, XrAiOptionAttribute[]>();
             var allProviders = new HashSet<string>();
 
-            // Collect all providers from all interfaces
             foreach (var interfaceType in XrAiFactory.XrAiInterfaces.Values)
             {
                 var providerOptions = XrAiFactory.GetAllProviderOptions(interfaceType);
@@ -101,10 +95,9 @@ namespace XrAiAccelerator
                 }
             }
 
-            // For each provider, collect global and both-scoped options
             foreach (var providerName in allProviders)
             {
-                var globalOptions = new HashSet<string>();
+                var globalOptions = new HashSet<XrAiOptionAttribute>();
 
                 foreach (var interfaceType in XrAiFactory.XrAiInterfaces.Values)
                 {
@@ -113,7 +106,7 @@ namespace XrAiAccelerator
                     {
                         var relevantOptions = options
                             .Where(opt => opt.Scope == XrAiOptionScope.Global || opt.Scope == XrAiOptionScope.Both)
-                            .Select(opt => opt.Key);
+                            .Select(opt => opt);
                         
                         foreach (var option in relevantOptions)
                         {
@@ -158,7 +151,6 @@ namespace XrAiAccelerator
 
         public void LoadFromFile()
         {
-            // Load main config
             TextAsset configFile = Resources.Load<TextAsset>(CONFIG_FILE_PATH);
             if (configFile == null)
             {
@@ -166,8 +158,6 @@ namespace XrAiAccelerator
             }
             if (configFile != null)
             {
-                Debug.Log($"Loading XrAiModelManager config from {configFile.name}");
-                Debug.Log($"Config file content: {configFile.text}");
                 try
                 {
                     _modelData = JsonUtility.FromJson<XrAiModelData>(configFile.text);
@@ -186,7 +176,6 @@ namespace XrAiAccelerator
                 _modelData.sections = new List<XrAiSection>();
             }
 
-            // Load API keys
             TextAsset apiKeysFile = Resources.Load<TextAsset>(API_KEYS_FILE_PATH);
             if (apiKeysFile != null)
             {
@@ -208,7 +197,6 @@ namespace XrAiAccelerator
                 _apiKeysData.sections = new List<XrAiSection>();
             }
 
-            // Ensure all predefined properties exist
             InitializePredefinedProperties();
         }
 
@@ -216,7 +204,6 @@ namespace XrAiAccelerator
         {
             foreach (var sectionDef in GLOBAL_SECTION)
             {
-                // Initialize API keys in separate data
                 var apiSection = _apiKeysData.sections.FirstOrDefault(s => s.sectionName == sectionDef.Key);
                 if (apiSection == null)
                 {
@@ -224,20 +211,18 @@ namespace XrAiAccelerator
                     _apiKeysData.sections.Add(apiSection);
                 }
 
-                // Add API key properties to API keys data
                 foreach (var key in sectionDef.Value)
                 {
-                    if (key == "apiKey" && !apiSection.properties.Any(p => p.key == key))
+                    if (key.Key == "apiKey" && !apiSection.properties.Any(p => p.key == key.Key))
                     {
                         apiSection.properties.Add(new XrAiProperty()
                         {
-                            key = key,
+                            key = key.Key,
                             value = ""
                         });
                     }
                 }
 
-                // Initialize main config section (without API keys)
                 var section = _modelData.sections.FirstOrDefault(s => s.sectionName == sectionDef.Key);
                 if (section == null)
                 {
@@ -245,7 +230,6 @@ namespace XrAiAccelerator
                     _modelData.sections.Add(section);
                 }
 
-                // Add workflow-specific properties to main config
                 if (WORKFLOW_PROPERTIES.ContainsKey(sectionDef.Key))
                 {
                     foreach (var workflow in WORKFLOW_PROPERTIES[sectionDef.Key])
@@ -260,11 +244,11 @@ namespace XrAiAccelerator
 
                         foreach (var key in workflow.Value)
                         {
-                            if (!workflowSection.properties.Any(p => p.key == key))
+                            if (!workflowSection.properties.Any(p => p.key == key.Key))
                             {
                                 workflowSection.properties.Add(new XrAiProperty()
                                 {
-                                    key = key,
+                                    key = key.Key,
                                     value = ""
                                 });
                             }
@@ -276,12 +260,10 @@ namespace XrAiAccelerator
 
         public void SaveToFile()
         {
-            // Save main config
             string json = JsonUtility.ToJson(_modelData, true);
             string filePath = Application.dataPath + "/Resources/" + CONFIG_FILE_PATH + ".txt";
             System.IO.File.WriteAllText(filePath, json);
 
-            // Save API keys
             string apiKeysJson = JsonUtility.ToJson(_apiKeysData, true);
             string apiKeysFilePath = Application.dataPath + "/Resources/" + API_KEYS_FILE_PATH + ".txt";
             System.IO.File.WriteAllText(apiKeysFilePath, apiKeysJson);
@@ -309,7 +291,6 @@ namespace XrAiAccelerator
         {
             var result = GetSectionProperties(sectionName);
 
-            // Add API key from separate data
             var apiSection = _apiKeysData.sections.FirstOrDefault(s => s.sectionName == sectionName);
             if (apiSection != null)
             {
@@ -331,7 +312,6 @@ namespace XrAiAccelerator
 
         public string GetGlobalProperty(string sectionName, string key, string defaultValue = "")
         {
-            // Check if it's an API key
             if (key == "apiKey")
             {
                 var apiSection = _apiKeysData.sections.FirstOrDefault(s => s.sectionName == sectionName);
@@ -343,7 +323,6 @@ namespace XrAiAccelerator
                 return defaultValue;
             }
 
-            // Regular property from main config
             var section = _modelData.sections.FirstOrDefault(s => s.sectionName == sectionName);
             if (section != null)
             {

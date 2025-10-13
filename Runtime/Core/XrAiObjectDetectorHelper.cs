@@ -16,7 +16,7 @@ namespace XrAiAccelerator
             }
         }
 
-        public static void DrawKeypoints(Transform parent, XrAiBoundingBox[] boundingBoxes, Vector2 imageDimensions = default, Vector2 canvasDimensions = default)
+         public static void DrawKeypoints(Transform parent, XrAiBoundingBox[] boundingBoxes, Vector2 imageDimensions = default, Vector2 canvasDimensions = default)
         {
             foreach (var box in boundingBoxes)
             {
@@ -60,13 +60,6 @@ namespace XrAiAccelerator
             Color color = Color.Lerp(Color.red, Color.green, keypoint.confidence);
             Renderer renderer = sphere.GetComponent<Renderer>();
             renderer.material.color = color;
-
-            // // Add label
-            // TextMeshPro label = pointObject.AddComponent<TextMeshPro>();
-            // label.text = $"{keypoint.@class} ({keypoint.confidence:P1})";
-            // label.fontSize = 0.1f;
-            // label.alignment = TextAlignmentOptions.Center;
-            // label.transform.localPosition = new Vector3(0, 0.02f, 0); // Position above the sphere
         }
 
         public static void DrawBoxes(Transform parent, XrAiBoundingBox[] boundingBoxes, Vector2 scale = default, Vector2 dimensions = default)
@@ -84,19 +77,28 @@ namespace XrAiAccelerator
             Color boxColor = GetBoxColor(colorIndex);
             GameObject lineObject = CreateNewBox(parent, boxColor, dimensions);
 
+            // Clean debug output - only for the first person
+            if (box.CenterX == 708.5f) // First person's box
+            {
+                Debug.Log($"Box {box.ClassName}: Raw Center({box.CenterX}, {box.CenterY})");
+            }
+
             float scaledWidth = box.Width * scale.x;
             float scaledHeight = box.Height * scale.y;
             float scaledCenterX = box.CenterX * scale.x;
             float scaledCenterY = dimensions.y - (box.CenterY * scale.y);
+            
+            float boxHalfWidth = dimensions.x / 2;
+            float boxHalfHeight = dimensions.y / 2;
 
             float halfWidth = dimensions.x / 2;
             float halfHeight = dimensions.y / 2;
 
             // Calculate box corners
-            float left = scaledCenterX - scaledWidth / 2 - halfWidth;
-            float right = scaledCenterX + scaledWidth / 2 - halfWidth;
-            float top = scaledCenterY + scaledHeight / 2 - halfHeight;
-            float bottom = scaledCenterY - scaledHeight / 2 - halfHeight;
+            float left = scaledCenterX - scaledWidth / 2 - boxHalfWidth;
+            float right = scaledCenterX + scaledWidth / 2 - boxHalfWidth;
+            float top = scaledCenterY + scaledHeight / 2 - boxHalfHeight;
+            float bottom = scaledCenterY - scaledHeight / 2 - boxHalfHeight;
 
             // Set line positions to form a rectangle
             LineRenderer lineRenderer = lineObject.GetComponent<LineRenderer>();
@@ -112,8 +114,8 @@ namespace XrAiAccelerator
             label.text = box.ClassName;
 
             // get the font height in pixels
-            float labelHeight = label.GetPreferredValues(label.text).y - 0.1f;
-            label.transform.localPosition = new Vector3(scaledCenterX - halfWidth, top + labelHeight, -0.01f);
+            float labelHeight = label.GetPreferredValues(label.text).y - 0.01f; // Scale down for Unity units
+            label.transform.localPosition = new Vector3(scaledCenterX - boxHalfWidth, top + labelHeight, -0.01f);
         }
 
         private static Color GetBoxColor(int index)

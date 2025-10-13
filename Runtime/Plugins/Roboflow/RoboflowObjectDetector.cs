@@ -51,8 +51,12 @@ namespace XrAiAccelerator
                 string base64Image = Convert.ToBase64String(imageBytes);
 
                 RoboflowRequest requestData = CreateRoboflowRequest(url, base64Image, apiKey, modelId);
+                Debug.Log($"Roboflow request: {JsonConvert.SerializeObject(requestData)}");
                 string jsonContent = JsonConvert.SerializeObject(requestData);
-                var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+                var content = new StringContent(jsonContent, System.Text.Encoding.UTF8);
+                
+                // Explicitly set Content-Type header
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
 
                 HttpResponseMessage response = await _httpClient.PostAsync(url, content);
 
