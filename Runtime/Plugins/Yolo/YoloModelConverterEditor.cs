@@ -103,7 +103,7 @@ namespace XrAiAccelerator
             maskWeights = Functional.Reshape(maskWeights, new[] { -1, 160, 160 });
 
             // Compile and save the model
-            Model modelFinal = graph.Compile(selectedBoxCoords, selectedLabelIds, selectedMasks, maskWeights);
+            Model modelFinal = graph.Compile(selectedBoxCoords, selectedLabelIds, maskWeights);
             ModelQuantizer.QuantizeWeights(QuantizationType.Uint8, ref modelFinal);
             ModelWriter.Save(_filePath, modelFinal);
 

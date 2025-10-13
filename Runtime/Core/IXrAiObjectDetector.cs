@@ -1,11 +1,13 @@
-using UnityEngine;
-using System.Threading.Tasks;
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using UnityEngine;
 
 namespace XrAiAccelerator
 {
     public interface IXrAiObjectDetector
     {
-        public Task<XrAiResult<XrAiBoundingBox[]>> Execute(Texture2D texture, Dictionary<string, string> options = null);
+        public Task Initialize(Dictionary<string, string> options = null, XrAiAssets assets = null);
+        public Task Execute(Texture2D texture, Dictionary<string, string> options, Action<XrAiResult<XrAiBoundingBox[]>> callback);
     }
 }

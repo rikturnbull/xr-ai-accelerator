@@ -83,41 +83,36 @@ The `XrAiFactory` class manages plugins and fetches models by name.
 For example, to fetch the Groq ImageToText model, load it by name '`Groq`' and pass your `apiKey` inside the `options`:
 
 ```
-IXrAiImageToText imageToText = 
-  XrAiFactory.LoadImageToText("Groq", new 
-    System.Collections.Generic.Dictionary<string, string> {
-        { "apiKey", _apiKey }
-    }
-);
+IXrAiImageToText imageToText =  XrAiFactory.LoadImageToText("Groq");
+imageToText.Initialize(new Dictionary<string, string> { { "apiKey", _apiKey } });
 ```
 
 Now execute the pipeline, passing in any model specific options (Groq requires a model and a prompt):
 
 ```
-_task = imageToText.Execute(_rawImage.texture as Texture2D,
-    new System.Collections.Generic.Dictionary<string, string>
+_task = imageToText.Execute(
+    _rawImage.texture as Texture2D,
+    new Dictionary<string, string>
     {
         { "model", "llama-4-scout-17b-16e-instruct" },
         { "prompt", "What's in this image?" }
-    }
+    },
+    OnImageToTextResult
 );
 ```
 
-This is an asynchronous call that runs in the background. Check its progress in the `Update()` method:
+This is an asynchronous call that runs in the background. The callback will be executed when it has completed:
 
 ```
-if (_task != null)
+private void OnImageToTextResult(XrAiResult<string> result)
 {
-    if (!_task.IsCompleted) return;
-
-    if (_task.IsFaulted)
+    if (!result.IsSuccess)
     {
-        Debug.LogError("Task failed: " + _task.Exception);
+        Debug.LogException(new Exception(result.ErrorMessage));
         return;
     }
 
-    XrAiTaskResult result = _task.Result;
-    Debug.Log($"Answer: {result.StringResult}");
+    Debug.Log(result.Data)
 }
 ```
 

@@ -7,5 +7,6 @@ namespace XrAiAccelerator
         public float Width;
         public float Height;
         public string ClassName;
+        public XrAiKeypoint[] Keypoints;
     }
 }
