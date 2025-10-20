@@ -42,7 +42,7 @@ namespace XrAiAccelerator
 
             float normX = keypoint.x / imageDimensions.x;
             float normY = keypoint.y / imageDimensions.y;
-            normY = 1 - normY; // Invert Y for Unity's coordinate system
+            normY = 1 - normY;
 
             float centeredX = normX - 0.5f;
             float centeredY = normY - 0.5f;
@@ -53,7 +53,13 @@ namespace XrAiAccelerator
             // Create a small sphere to represent the keypoint
             GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             sphere.transform.SetParent(pointObject.transform);
-            sphere.transform.localScale = new Vector3(0.002f, 0.002f, 0.002f); // Small size
+            
+            // Scale sphere size based on canvas dimensions
+            float baseSphereSize = 0.008f;
+            float dimensionMultiplier = (canvasDimensions.x + canvasDimensions.y) / 2f;
+            float sphereSize = baseSphereSize * dimensionMultiplier;
+            sphere.transform.localScale = new Vector3(sphereSize, sphereSize, 0.0001f);
+            
             sphere.transform.localPosition = new Vector3(unityX, unityY, 0f); // Slightly above the plane
 
             // Set color based on confidence
