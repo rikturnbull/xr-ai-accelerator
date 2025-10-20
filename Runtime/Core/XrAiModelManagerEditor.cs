@@ -32,7 +32,6 @@ namespace XrAiAccelerator
             EditorGUILayout.LabelField("Global Settings", EditorStyles.miniBoldLabel);
             foreach (var key in section.Value)
             {
-                Debug.Log($"Found global property '{key}' for section '{section.Key}'");
                 DrawPropertyByKey(section.Key, key);
             }
             
@@ -128,7 +127,6 @@ namespace XrAiAccelerator
     {
             XrAiSection section;
         
-        Debug.Log($"Drawing property '{key}' in section '{sectionName}'");
         // Check if it's an API key - use API keys data
         if (key.Key == "apiKey")
         {
@@ -146,7 +144,6 @@ namespace XrAiAccelerator
         }
 
         XrAiProperty property = section.properties.FirstOrDefault(p => p.key == key.Key);
-        Debug.Log($"Found property '{key}' in section '{sectionName}': {(property != null ? property.value : "null")}");
         if (property == null)
         {
             // If property doesn't exist, create a new one with an empty value

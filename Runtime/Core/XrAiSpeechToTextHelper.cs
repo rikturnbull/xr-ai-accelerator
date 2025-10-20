@@ -10,10 +10,11 @@ namespace XrAiAccelerator
         private AudioClip _clip;
         private bool _isRecording = false;
         private int _recordingMax = 5;
+        private bool _toWav = true;
         private float _time = 0f;
         private Action<byte[]> _onRecordingComplete;
 
-        public void StartRecording(string device, Action<byte[]> onRecordingComplete = null, int recordingMax = 5)
+        public void StartRecording(string device, Action<byte[]> onRecordingComplete = null, int recordingMax = 5, int frequency = 16000, bool toWav = true)
         {
             if (_isRecording)
             {
@@ -25,9 +26,10 @@ namespace XrAiAccelerator
             _clip = null;
             _recordingMax = recordingMax;
             _onRecordingComplete = onRecordingComplete;
+            _toWav = toWav;
 
-            Microphone.Start(device, true, recordingMax, 44100);
-            _clip = Microphone.Start(device, false, recordingMax, 44100);
+            Microphone.Start(device, true, recordingMax, frequency);
+            _clip = Microphone.Start(device, false, recordingMax, frequency);
         }
 
         public void StopRecording()
@@ -36,8 +38,13 @@ namespace XrAiAccelerator
             if (_clip != null)
             {
                 Microphone.End(Microphone.devices[0]);
-
-                byte[] audioData = Convert(_clip);
+                if (_toWav)
+                {
+                    byte[] wavData = ConvertToWAV(_clip);
+                    _onRecordingComplete?.Invoke(wavData);
+                    return;
+                }
+                byte[] audioData = ConvertToRawPCM(_clip);
                 _onRecordingComplete?.Invoke(audioData);
             }
         }
@@ -54,7 +61,7 @@ namespace XrAiAccelerator
             }
         }
         
-        private static byte[] Convert(AudioClip clip)
+        private static byte[] ConvertToWAV(AudioClip clip)
         {
             if (!clip)
             {
@@ -66,6 +73,31 @@ namespace XrAiAccelerator
             ConvertAndWrite(memoryStream, clip);
             WriteWavHeader(memoryStream, clip);
             return memoryStream.ToArray();
+        }
+
+        public static byte[] ConvertToRawPCM(AudioClip clip)
+        {
+            if (!clip)
+            {
+                Debug.LogError("ConvertToRawPCM: AudioClip is null! Cannot convert.");
+                return null;
+            }
+
+            var samples = new float[clip.samples];
+            clip.GetData(samples, 0);
+
+            var intData = new short[samples.Length];
+            var bytesData = new byte[samples.Length * 2];
+
+            var rescaleFactor = 32767;
+            
+            for (var i = 0; i < samples.Length; i++)
+            {
+                intData[i] = (short)(samples[i] * rescaleFactor);
+                BitConverter.GetBytes(intData[i]).CopyTo(bytesData, i * 2);
+            }
+
+            return bytesData;
         }
 
         private static MemoryStream CreateMemoryStream()
