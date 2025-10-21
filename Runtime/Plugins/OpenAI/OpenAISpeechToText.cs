@@ -9,43 +9,46 @@ namespace XrAiAccelerator
 {
     [XrAiProvider("OpenAI")]
     [XrAiOption("apiKey", XrAiOptionScope.Global, isRequired: true, description: "OpenAI API key for authentication")]
+    [XrAiOption("language", XrAiOptionScope.Global, isRequired: false, defaultValue: "en", description: "The language of the audio (e.g., 'en' for English)")]
+    [XrAiOption("model", XrAiOptionScope.Global, isRequired: false, defaultValue: "whisper-1", description: "The model to use for speech-to-text conversion")]
+    [XrAiOption("prompt", XrAiOptionScope.Global, isRequired: false, defaultValue: "", description: "An optional text prompt to guide the transcription")]
+    [XrAiOption("temperature", XrAiOptionScope.Global, defaultValue: "0.0", isRequired: false, description: "Temperature for the API request")]
     public class OpenAISpeechToText : IXrAiSpeechToText
     {
-        private Dictionary<string, string> _globalOptions = new();
+        private XrAiOptionsHelper _optionsHelper;
 
         private OpenAIClient _openAIClient;
 
-        public Task Initialize(Dictionary<string, string> options = null, XrAiAssets assets = null)
+        public Task Initialize(Dictionary<string, string> options = null)
         {
-            _globalOptions = options ?? new Dictionary<string, string>();
-            _openAIClient = new OpenAIClient(GetOption("apiKey"));
+            _optionsHelper = new XrAiOptionsHelper(this, options);
+            _openAIClient = new OpenAIClient(_optionsHelper.GetOption("apiKey"));
             return Task.CompletedTask;
         }
 
         public async Task Execute(byte[] audioData, Dictionary<string, string> options, Action<XrAiResult<string>> callback)
         {
-            string model = GetOption("model", options);
-
-            Stream stream = new MemoryStream(audioData);
-            AudioTranscriptionRequest request = new(stream, "name.wav", model, null, null, "en", null, AudioResponseFormat.Text);
-            string result = await _openAIClient.AudioEndpoint.CreateTranscriptionTextAsync(request);
-
-            callback?.Invoke(!string.IsNullOrEmpty(result)
-                ? XrAiResult.Success(result)
-                : XrAiResult.Failure<string>("No transcription result returned."));
-        }
-
-        private string GetOption(string key, Dictionary<string, string> options = null)
-        {
-            if (options != null && options.TryGetValue(key, out string value))
+            try
             {
-                return value;
+                string language = _optionsHelper.GetOption("language", options);
+                string model = _optionsHelper.GetOption("model", options);
+                string prompt = _optionsHelper.GetOption("prompt", options);
+                float temperature = _optionsHelper.GetFloatOption("temperature", options);
+
+                Stream stream = new MemoryStream(audioData);
+                AudioTranscriptionRequest request = new(stream, "name.wav", model, null, null, language, prompt, AudioResponseFormat.Text, temperature);
+                string result = await _openAIClient.AudioEndpoint.CreateTranscriptionTextAsync(request);
+
+                callback?.Invoke(!string.IsNullOrEmpty(result)
+                    ? XrAiResult.Success(result)
+                    : XrAiResult.Failure<string>("No transcription result returned."));
             }
-            else if (_globalOptions.TryGetValue(key, out value))
+            catch (Exception ex)
             {
-                return value;
+                callback?.Invoke(
+                    XrAiResult.Failure<string>($"Exception in OpenAISpeechToText: {ex.Message}")
+                );
             }
-            throw new KeyNotFoundException($"Option '{key}' not found.");
         }
     }
 }

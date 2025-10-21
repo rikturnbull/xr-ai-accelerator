@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Unity.InferenceEngine;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace XrAiAccelerator
 {
@@ -24,13 +26,52 @@ namespace XrAiAccelerator
 
         private BackendType _backendType = BackendType.CPU; // Default backend type
 
-        public async Task LoadModel(YoloAssets yoloAssets)
+        public async Task LoadModel()
         {
-            Model model = ModelLoader.Load(yoloAssets.ModelAsset);
+            Task<byte[]> modelDataTask = LoadStreamingAssetAsync<byte[]>("yolo11n-seg.sentis");
+            Task<string> labelContentTask = LoadStreamingAssetAsync<string>("yolo11n-labels.txt");
+
+            byte[] modelData = await modelDataTask;
+            string labelContent = await labelContentTask;
+
+            using MemoryStream modelStream = new(modelData);
+            Model model = ModelLoader.Load(modelStream);
+
+            // Model model = ModelLoader.Load(yoloAssets.ModelAsset);
             _inferenceEngineWorker = new Worker(model, _backendType);
-            _labels = yoloAssets.LabelsAsset.text.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            _labels = labelContent.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
             _isModelLoaded = true;
             await WarmUpModel();
+        }
+
+        private async Task<T> LoadStreamingAssetAsync<T>(string fileName)
+        {
+            string filePath = Path.Combine(Application.streamingAssetsPath, fileName);
+
+            using UnityWebRequest request = UnityWebRequest.Get(filePath);
+
+            await request.SendWebRequest();
+
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError($"Failed to load {fileName}: {request.error}");
+                throw new System.Exception($"Failed to load {fileName}: {request.error}");
+            }
+
+            if (typeof(T) == typeof(byte[]))
+            {
+                Debug.Log($"Successfully loaded {fileName} ({request.downloadedBytes} bytes)");
+                return (T)(object)request.downloadHandler.data;
+            }
+            else if (typeof(T) == typeof(string))
+            {
+                Debug.Log($"Successfully loaded {fileName} ({request.downloadHandler.text.Length} characters)");
+                return (T)(object)request.downloadHandler.text;
+            }
+            else
+            {
+                throw new ArgumentException($"Unsupported type {typeof(T)}. Only byte[] and string are supported.");
+            }
         }
 
         public async Task WarmUpModel()
@@ -40,7 +81,7 @@ namespace XrAiAccelerator
             // Create dummy input for warmup
             var dummyInput = new Tensor<float>(new TensorShape(1, 3, 640, 640));
             var schedule = _inferenceEngineWorker.ScheduleIterable(dummyInput);
-            
+
             int it = 0;
             while (schedule.MoveNext())
             {
@@ -49,7 +90,7 @@ namespace XrAiAccelerator
                     await Task.Yield();
                 }
             }
-            
+
             dummyInput.Dispose();
         }
 
@@ -113,6 +154,7 @@ namespace XrAiAccelerator
             }
             catch (Exception ex)
             {
+                Debug.LogException(ex);
                 onComplete?.Invoke(XrAiResult.Failure<XrAiBoundingBox[]>(ex.Message));
             }
 

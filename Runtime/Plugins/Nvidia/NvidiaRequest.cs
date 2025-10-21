@@ -2,7 +2,6 @@ using System;
 
 namespace XrAiAccelerator
 {
-    #region Nvidia Request JSON Classes
     [Serializable]
     public class NvidiaRequest
     {
@@ -20,7 +19,20 @@ namespace XrAiAccelerator
     public class NvidiaMessage
     {
         public string role;
-        public string content;
+        public object content;
     }
-    #endregion
+
+    [Serializable]
+    public class NvidiaContentPart
+    {
+        public string type;
+        public string text;
+        public NvidiaImageUrl image_url;
+    }
+
+    [Serializable]
+    public class NvidiaImageUrl
+    {
+        public string url;
+    }
 }

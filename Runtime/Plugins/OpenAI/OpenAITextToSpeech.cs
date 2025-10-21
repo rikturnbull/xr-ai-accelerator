@@ -1,5 +1,6 @@
 using OpenAI;
 using OpenAI.Audio;
+using OpenAI.Models;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,43 +9,63 @@ using UnityEngine;
 
 namespace XrAiAccelerator
 {
+        //    [FunctionProperty("The voice to use when generating the audio.", true, "alloy", new object[] { "echo", "fable", "onyx", "nova", "shimmer" })]
+
     [XrAiProvider(PROVIDER_NAME)]
     [XrAiOption("apiKey", XrAiOptionScope.Global, isRequired: true, description: "OpenAI API key for authentication")]
+    [XrAiOption("speed", XrAiOptionScope.Global, isRequired: false, defaultValue: "1.0", description: "The speed of the generated audio - a value from 0.25 to 4.0. 1.0 is the default")]
+    [XrAiOption("voice", XrAiOptionScope.Global, isRequired: false, defaultValue: "alloy", description: "The voice to use for text-to-speech generation (e.g., 'alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer')")]
     public class OpenAITextToSpeech : IXrAiTextToSpeech
     {
         private const string PROVIDER_NAME = "OpenAI";
-        private Dictionary<string, string> _globalOptions = new();
+        private XrAiOptionsHelper _optionsHelper;
 
         private OpenAIClient _openAIClient;
 
         public Task Initialize(Dictionary<string, string> globalOptions)
         {
-            _globalOptions = globalOptions;
-            _openAIClient = new OpenAIClient(GetOption("apiKey"));
+            _optionsHelper = new XrAiOptionsHelper(this, globalOptions);
+            _openAIClient = new OpenAIClient(_optionsHelper.GetOption("apiKey"));
             return Task.CompletedTask;
         }
 
         public async Task Execute(string text, Dictionary<string, string> workflowOptions, Action<XrAiResult<AudioClip>> callback)
         {
-            SpeechRequest request = new SpeechRequest(text);
-            SpeechClip result = await _openAIClient.AudioEndpoint.GetSpeechAsync(request);
+            try
+            {
+                SpeechRequest request = new(
+                    text,
+                    Model.TTS_1,
+                    GetVoice(_optionsHelper.GetOption("voice", workflowOptions)),
+                    null,
+                    SpeechResponseFormat.MP3,
+                    float.Parse(_optionsHelper.GetOption("speed", workflowOptions))
+                );
+                SpeechClip result = await _openAIClient.AudioEndpoint.GetSpeechAsync(request);
 
-            callback?.Invoke(result != null
-                ? XrAiResult.Success(result.AudioClip)
-                : XrAiResult.Failure<AudioClip>("No audio clip returned from OpenAI Text-to-Speech."));
+                callback?.Invoke(result != null
+                    ? XrAiResult.Success(result.AudioClip)
+                    : XrAiResult.Failure<AudioClip>("No audio clip returned from OpenAI Text-to-Speech."));
+            }
+            catch (Exception ex)
+            {
+                callback?.Invoke(
+                    XrAiResult.Failure<AudioClip>($"Exception in OpenAITextToSpeech: {ex.Message}")
+                );
+            }
         }
 
-        private string GetOption(string key, Dictionary<string, string> options = null)
+        private Voice GetVoice(string voiceName)
         {
-            if (options != null && options.TryGetValue(key, out string value))
+            return voiceName.ToLower() switch
             {
-                return value;
-            }
-            else if (_globalOptions.TryGetValue(key, out value))
-            {
-                return value;
-            }
-            throw new KeyNotFoundException($"Option '{key}' not found.");
+                "echo" => Voice.Echo,
+                "fable" => Voice.Fable,
+                "onyx" => Voice.Onyx,
+                "nova" => Voice.Nova,
+                "shimmer" => Voice.Shimmer,
+                _ => Voice.Alloy,
+            };
         }
     }
 }

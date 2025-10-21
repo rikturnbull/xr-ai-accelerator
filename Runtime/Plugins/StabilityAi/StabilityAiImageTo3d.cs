@@ -10,26 +10,35 @@ namespace XrAiAccelerator
 {
     [XrAiProvider("StabilityAi")]
     [XrAiOption("apiKey", XrAiOptionScope.Global, isRequired: true, description: "Stability AI API key for authentication")]
-    [XrAiOption("url", XrAiOptionScope.Global, isRequired: true, description: "Stability AI API URL", defaultValue: "https://api.stability.ai/v2beta/3d/stable-fast-3d")]
+    [XrAiOption("url", XrAiOptionScope.Global, isRequired: false, description: "Stability AI API URL", defaultValue: "https://api.stability.ai/v2beta/3d/stable-fast-3d")]
     public class StabilityAiImageTo3d : IXrAiImageTo3d
     {
-        private Dictionary<string, string> _globalOptions = new();
+        private XrAiOptionsHelper _optionsHelper;
         private HttpClient _client = new HttpClient();
 
-        public Task Initialize(Dictionary<string, string> options = null, XrAiAssets assets = null)
+        public Task Initialize(Dictionary<string, string> options = null)
         {
-            _globalOptions = options ?? new Dictionary<string, string>();
+            _optionsHelper = new XrAiOptionsHelper(this, options);
             return Task.CompletedTask;
         }
 
         public async Task Execute(Texture2D texture, Dictionary<string, string> options, Action<XrAiResult<byte[]>> callback)
         {
-            byte[] imageBytes = texture.EncodeToPNG();
-            string apiKey = GetOption("apiKey", options);
-            string url = GetOption("url", options);
-            XrAiResult<byte[]> result = await Execute(imageBytes, apiKey, url);
+            try
+            {
+                byte[] imageBytes = texture.EncodeToPNG();
+                string apiKey = _optionsHelper.GetOption("apiKey", options);
+                string url = _optionsHelper.GetOption("url", options);
+                XrAiResult<byte[]> result = await Execute(imageBytes, apiKey, url);
 
-            callback?.Invoke(result);
+                callback?.Invoke(result);
+            }
+            catch (Exception ex)
+            {
+                callback?.Invoke(
+                    XrAiResult.Failure<byte[]>($"Exception in StabilityAiImageTo3d: {ex.Message}")
+                );
+            }
         }
 
         private async Task<XrAiResult<byte[]>> Execute(byte[] imageBytes, string apiKey, string url)
@@ -57,18 +66,6 @@ namespace XrAiAccelerator
             {
                 return XrAiResult.Failure<byte[]>(ex.Message);
             }
-        }
-        private string GetOption(string key, Dictionary<string, string> options = null)
-        {
-            if (options != null && options.TryGetValue(key, out string value))
-            {
-                return value;
-            }
-            else if (_globalOptions.TryGetValue(key, out value))
-            {
-                return value;
-            }
-            throw new KeyNotFoundException($"Option '{key}' not found.");
         }
 
         private static StringContent StringFormField(string name, string value)

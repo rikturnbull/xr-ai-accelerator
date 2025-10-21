@@ -5,6 +5,50 @@ namespace XrAiAccelerator
 {
     public class XrAiImageHelper
     {
+        public static Texture2D ScaleTexture(Texture2D source, int maxDimension)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source), "Source texture cannot be null");
+            }
+
+            if (source.width <= maxDimension && source.height <= maxDimension)
+            {
+                Texture2D copy = new(source.width, source.height, source.format, false);
+                Graphics.CopyTexture(source, copy);
+                return copy;
+            }
+
+            int newWidth, newHeight;
+            if (source.width > source.height)
+            {
+                newWidth = maxDimension;
+                newHeight = Mathf.RoundToInt((float)source.height / source.width * maxDimension);
+            }
+            else
+            {
+                newHeight = maxDimension;
+                newWidth = Mathf.RoundToInt((float)source.width / source.height * maxDimension);
+            }
+
+            RenderTexture rt = RenderTexture.GetTemporary(newWidth, newHeight, 0, RenderTextureFormat.ARGB32);
+            rt.filterMode = FilterMode.Bilinear;
+            
+            RenderTexture previousActive = RenderTexture.active;
+            RenderTexture.active = rt;
+            
+            Graphics.Blit(source, rt);
+            
+            Texture2D scaledTexture = new(newWidth, newHeight, TextureFormat.RGBA32, false);
+            scaledTexture.ReadPixels(new Rect(0, 0, newWidth, newHeight), 0, 0);
+            scaledTexture.Apply();
+            
+            RenderTexture.active = previousActive;
+            RenderTexture.ReleaseTemporary(rt);
+            
+            return scaledTexture;
+        }
+
         public static byte[] EncodeTexture(Texture2D texture, string imageFormat)
         {
             if (texture == null)
@@ -25,7 +69,6 @@ namespace XrAiAccelerator
             if (imageBytes == null || imageBytes.Length < 4)
                 return "image/jpeg"; // Default fallback
 
-            // Check for common image format signatures
             // JPEG: FF D8 FF
             if (imageBytes[0] == 0xFF && imageBytes[1] == 0xD8 && imageBytes[2] == 0xFF)
             {

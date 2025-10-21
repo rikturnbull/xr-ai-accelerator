@@ -26,6 +26,8 @@ namespace XrAiAccelerator
 
         private static void DrawKeypoints(Transform parent, XrAiKeypoint[] keypoints, Vector2 imageDimensions = default, Vector2 canvasDimensions = default)
         {
+            if(keypoints == null || keypoints.Length == 0) return;
+
             imageDimensions = imageDimensions == default ? new Vector2(1.0f, 1.0f) : imageDimensions;
             canvasDimensions = canvasDimensions == default ? new Vector2(1.0f, 1.0f) : canvasDimensions;
 
