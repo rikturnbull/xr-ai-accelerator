@@ -34,8 +34,8 @@ namespace XrAiAccelerator
     [Serializable]
     public class RoboflowImageInfo
     {
-        public float width;
-        public float height;
+        public float? width;
+        public float? height;
     }
 
     [Serializable]

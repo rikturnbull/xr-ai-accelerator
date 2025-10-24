@@ -134,7 +134,7 @@ namespace XrAiAccelerator
 
                 if (_outputs[i] == null || _outputs[i].shape[0] == 0)
                 {
-                    onComplete?.Invoke(XrAiResult.Failure<XrAiBoundingBox[]>($"No output{i} available"));
+                    onComplete?.Invoke(XrAiResult.Success(Array.Empty<XrAiBoundingBox>()));
                     CleanupOutputs();
                     return;
                 }

@@ -2,6 +2,7 @@ using System;
 
 namespace XrAiAccelerator
 {
+    [Serializable]
     [AttributeUsage(AttributeTargets.Class)]
     public class XrAiProviderAttribute : Attribute
     {

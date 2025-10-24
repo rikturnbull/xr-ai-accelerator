@@ -127,7 +127,6 @@ namespace XrAiAccelerator
         {
             List<XrAiBoundingBox> boundingBoxes = new List<XrAiBoundingBox>();
 
-            Debug.Log($"Roboflow response: {responseText}");
             try
             {
                 RoboflowPredictions roboflowResult;

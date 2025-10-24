@@ -2,6 +2,7 @@ using System;
 
 namespace XrAiAccelerator
 {
+    [Serializable]
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
     public class XrAiOptionAttribute : Attribute
     {
@@ -21,6 +22,7 @@ namespace XrAiAccelerator
         }
     }
 
+    [Serializable]
     public enum XrAiOptionScope
     {
         Global,
