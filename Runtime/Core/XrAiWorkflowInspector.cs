@@ -12,32 +12,38 @@ namespace XrAiAccelerator
         {
             Dictionary<string, string> options = new();
 
-            string interfaceName = XrAiFactory.XrAiInterfaces[workflowId].Name;
+            List<XrAiWorkflowInspectorOption> workflowInspectorOptions = GetWorkflowInspectorOptions(workflowId, providerName);
+            foreach (var workflowInspectorOption in workflowInspectorOptions)
+            {
+                options[workflowInspectorOption.Key] = workflowInspectorOption.Value;
+            }
+
+            return options;
+        }
+
+        public List<XrAiWorkflowInspectorOption> GetWorkflowInspectorOptions(string interfaceName, string providerName)
+        {
             Transform typeTransform = transform.Find(interfaceName);
             if (typeTransform == null)
             {
                 Debug.LogError($"Type {interfaceName} not found under WorkflowsManager.");
-                return options;
+                return null;
             }
 
             Transform providerTransform = typeTransform.Find(providerName);
             if (providerTransform == null)
             {
                 Debug.LogError($"Provider {providerName} not found under type {interfaceName}.");
-                return options;
+                return null;
             }
 
-            XrAiWorkflowInspectorPanel workflowInspectorPanel = providerTransform.GetComponent<XrAiWorkflowInspectorPanel>();
-            if (workflowInspectorPanel != null)
+            XrAiWorkflowInspectorPanel xrAiWorkflowInspectorPanel = providerTransform.GetComponent<XrAiWorkflowInspectorPanel>();
+            if (xrAiWorkflowInspectorPanel != null)
             {
-                List<XrAiWorkflowInspectorOption> workflowInspectorOptions = workflowInspectorPanel.GetWorkflowInspectorOptions();
-                foreach (var workflowInspectorOption in workflowInspectorOptions)
-                {
-                    options[workflowInspectorOption.Key] = workflowInspectorOption.Value;
-                }
+                return xrAiWorkflowInspectorPanel.GetWorkflowInspectorOptions();
             }
 
-            return options;
+            return null;
         }
     }
 
