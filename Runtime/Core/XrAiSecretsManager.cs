@@ -19,15 +19,12 @@ namespace XrAiAccelerator
 
         public void LoadFromFile()
         {
-            Debug.Log("Loading secrets from file...");
             TextAsset configFile = Resources.Load<TextAsset>(SECRETS_FILE_PATH);
-            Debug.Log("Config file loaded: " + (configFile != null ? "Found" : "Not Found"));
             if (configFile != null)
             {
                 try
                 {
                     _secrets = JsonConvert.DeserializeObject<Dictionary<string, string>>(configFile.text);
-                    Debug.Log("Secrets loaded: " + (_secrets != null ? _secrets.Count.ToString() : "null"));
                     if (_secrets == null)
                     {
                         _secrets = new Dictionary<string, string>();
@@ -83,11 +80,9 @@ namespace XrAiAccelerator
 
         public static XrAiSecretsManager GetSecretsManager()
         {
-            Debug.Log("Getting XrAiSecretsManager instance...");
             if (_instance == null)
             {
                 _instance = Resources.Load<XrAiSecretsManager>("XrAiSecretsManager");
-                Debug.Log("XrAiSecretsManager instance loaded: " + (_instance != null ? "Success" : "Failed"));
                 if (_instance == null)
                 {
                     Debug.LogError("XrAiSecretsManager not found in Resources.");

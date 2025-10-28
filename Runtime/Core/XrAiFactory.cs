@@ -55,8 +55,6 @@ namespace XrAiAccelerator
                 {
                     GetImplementationsForType(interfaceType);
                 }
-
-                Debug.Log($"XrAiFactory initialized with {XrAiInterfaces.Count} interfaces and {_cachedImplementations.Values.Sum(d => d.Count)} implementations");
             }
             catch (Exception ex)
             {

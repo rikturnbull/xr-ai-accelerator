@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Unity.InferenceEngine;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEditor;
 
 namespace XrAiAccelerator
 {
@@ -26,10 +27,41 @@ namespace XrAiAccelerator
 
         private BackendType _backendType = BackendType.CPU; // Default backend type
 
+        private const string MODEL_FILE_NAME = "yolo11n-seg.sentis";
+        private const string LABELS_FILE_NAME = "yolo11n-labels.txt";
+
+        [UnityEditor.InitializeOnLoad]
+        public static class PackageStreamingAssetsCopier
+        {
+            static PackageStreamingAssetsCopier()
+            {
+                var source = "Packages/com.yourcompany.yourpackage/StreamingAssets";
+                source = "Assets/Scripts/XrAiAccelerator/StreamingAssets"; // For testing in editor
+                var dest = "Assets/StreamingAssets";
+
+                // Create destination directory if it doesn't exist
+                if (!Directory.Exists(dest))
+                {
+                    Directory.CreateDirectory(dest);
+                }
+                if (Directory.Exists(source))
+                {
+                    foreach (var file in new[] { MODEL_FILE_NAME, LABELS_FILE_NAME })
+                    {
+                        if (!File.Exists(Path.Combine(dest, file)))
+                        {
+                            Debug.Log($"Copying {file} from {source} to {dest}");
+                            FileUtil.CopyFileOrDirectory(Path.Combine(source, file), Path.Combine(dest, file));
+                        }
+                    }
+                }
+            }
+        }
+
         public async Task LoadModel()
         {
-            Task<byte[]> modelDataTask = LoadStreamingAssetAsync<byte[]>("yolo11n-seg.sentis");
-            Task<string> labelContentTask = LoadStreamingAssetAsync<string>("yolo11n-labels.txt");
+            Task<byte[]> modelDataTask = LoadStreamingAssetAsync<byte[]>(MODEL_FILE_NAME);
+            Task<string> labelContentTask = LoadStreamingAssetAsync<string>(LABELS_FILE_NAME);
 
             byte[] modelData = await modelDataTask;
             string labelContent = await labelContentTask;
@@ -60,12 +92,10 @@ namespace XrAiAccelerator
 
             if (typeof(T) == typeof(byte[]))
             {
-                Debug.Log($"Successfully loaded {fileName} ({request.downloadedBytes} bytes)");
                 return (T)(object)request.downloadHandler.data;
             }
             else if (typeof(T) == typeof(string))
             {
-                Debug.Log($"Successfully loaded {fileName} ({request.downloadHandler.text.Length} characters)");
                 return (T)(object)request.downloadHandler.text;
             }
             else

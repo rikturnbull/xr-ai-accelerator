@@ -10,7 +10,9 @@ namespace XrAiAccelerator
 {
     [XrAiProvider("StabilityAi")]
     [XrAiOption("apiKey", XrAiOptionScope.Global, isRequired: true, description: "Stability AI API key for authentication")]
-    [XrAiOption("url", XrAiOptionScope.Global, isRequired: false, description: "Stability AI API URL", defaultValue: "https://api.stability.ai/v2beta/3d/stable-fast-3d")]
+    [XrAiOption("foregroundRatio", XrAiOptionScope.Workflow, isRequired: false, description: "Amount of padding around the object to be processed within the frame: 0.1..1.0", defaultValue: "0.85")]
+    [XrAiOption("textureResolution", XrAiOptionScope.Workflow, isRequired: false, description: "Texture resolution: 512, 1024, 2048", defaultValue: "1024")]
+    [XrAiOption("url", XrAiOptionScope.Workflow, isRequired: false, description: "Stability AI API URL", defaultValue: "https://api.stability.ai/v2beta/3d/stable-fast-3d")]
     public class StabilityAiImageTo3d : IXrAiImageTo3d
     {
         private XrAiOptionsHelper _optionsHelper;
@@ -28,8 +30,10 @@ namespace XrAiAccelerator
             {
                 byte[] imageBytes = texture.EncodeToPNG();
                 string apiKey = _optionsHelper.GetOption("apiKey", options);
+                string foregroundRatio = _optionsHelper.GetOption("foregroundRatio", options);
+                string textureResolution = _optionsHelper.GetOption("textureResolution", options);
                 string url = _optionsHelper.GetOption("url", options);
-                XrAiResult<byte[]> result = await Execute(imageBytes, apiKey, url);
+                XrAiResult<byte[]> result = await Execute(imageBytes, apiKey, foregroundRatio, textureResolution, url);
 
                 callback?.Invoke(result);
             }
@@ -41,18 +45,25 @@ namespace XrAiAccelerator
             }
         }
 
-        private async Task<XrAiResult<byte[]>> Execute(byte[] imageBytes, string apiKey, string url)
+        private async Task<XrAiResult<byte[]>> Execute(
+            byte[] imageBytes,
+            string apiKey,
+            string foregroundRatio,
+            string textureResolution,
+            string url
+        )
         {
             try
             {
                 _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
                 using var form = new MultipartFormDataContent
                 {
-                    ImageFormField("image", imageBytes, "image/png", "image.png")
+                    ImageFormField("image", imageBytes, "image/png", "image.png"),
+                    StringFormField("texture_resolution", textureResolution),
+                    StringFormField("foreground_ratio", foregroundRatio)
                 };
 
                 HttpResponseMessage response = await _client.PostAsync(url, form);
-
                 if (!response.IsSuccessStatusCode)
                 {
                     string errorContent = await response.Content.ReadAsStringAsync();

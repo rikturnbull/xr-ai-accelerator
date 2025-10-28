@@ -21,6 +21,7 @@ namespace XrAiAccelerator
         }
     }
 
+    [Serializable]
     public enum XrAiOptionScope
     {
         Global,

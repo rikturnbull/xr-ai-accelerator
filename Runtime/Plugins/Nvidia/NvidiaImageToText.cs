@@ -73,7 +73,6 @@ namespace XrAiAccelerator
                 );
 
                 string jsonData = JsonConvert.SerializeObject(requestData);
-                Debug.Log($"NVIDIA Request JSON: {jsonData}");
                 StringContent content = new(jsonData, Encoding.UTF8, "application/json");
 
                 using HttpRequestMessage request = new(HttpMethod.Post, url);
