@@ -30,7 +30,8 @@ namespace XrAiAccelerator
         private const string MODEL_FILE_NAME = "yolo11n-seg.sentis";
         private const string LABELS_FILE_NAME = "yolo11n-labels.txt";
 
-        [UnityEditor.InitializeOnLoad]
+#if UNITY_EDITOR
+        [InitializeOnLoad]
         public static class PackageStreamingAssetsCopier
         {
             static PackageStreamingAssetsCopier()
@@ -57,6 +58,7 @@ namespace XrAiAccelerator
                 }
             }
         }
+#endif
 
         public async Task LoadModel()
         {

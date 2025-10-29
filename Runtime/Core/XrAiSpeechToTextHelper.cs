@@ -10,26 +10,29 @@ namespace XrAiAccelerator
         private AudioClip _clip;
         private bool _isRecording = false;
         private int _recordingMax = 5;
-        private bool _toWav = true;
+        private string _encoding = "wav";
         private float _time = 0f;
+        private string _device = null;
+        private int _frequency = 16000;
         private Action<byte[]> _onRecordingComplete;
 
-        public void StartRecording(string device, Action<byte[]> onRecordingComplete = null, int recordingMax = 5, int frequency = 16000, bool toWav = true)
+        public void StartRecording(Action<byte[]> onRecordingComplete = null, string device = null, string encoding = null, int? recordingMax = null, int? frequency = null)
         {
             if (_isRecording)
             {
                 Debug.LogWarning("Recording is already in progress.");
                 return;
             }
-            _time = 0f;
-            _isRecording = true;
-            _clip = null;
-            _recordingMax = recordingMax;
-            _onRecordingComplete = onRecordingComplete;
-            _toWav = toWav;
 
-            Microphone.Start(device, true, recordingMax, frequency);
-            _clip = Microphone.Start(device, false, recordingMax, frequency);
+            _device = device ?? GetMicrophone();
+            _encoding = encoding ?? "wav";
+            _frequency = frequency ?? 16000;
+            _isRecording = true;
+            _onRecordingComplete = onRecordingComplete;
+            _recordingMax = recordingMax ?? 5;
+            _time = 0f;
+
+            _clip = Microphone.Start(_device, false, _recordingMax, _frequency);
         }
 
         public void StopRecording()
@@ -37,8 +40,8 @@ namespace XrAiAccelerator
             _isRecording = false;
             if (_clip != null)
             {
-                Microphone.End(Microphone.devices[0]);
-                if (_toWav)
+                Microphone.End(_device);
+                if (_encoding == "wav")
                 {
                     byte[] wavData = ConvertToWAV(_clip);
                     _onRecordingComplete?.Invoke(wavData);
@@ -47,6 +50,25 @@ namespace XrAiAccelerator
                 byte[] audioData = ConvertToRawPCM(_clip);
                 _onRecordingComplete?.Invoke(audioData);
             }
+        }
+
+        private string GetMicrophone()
+        {
+            string[] availableMicrophones = Microphone.devices;
+            if (availableMicrophones.Length == 0)
+            {
+                Debug.LogError("No microphones found.");
+                return null;
+            }
+
+            foreach (string microphone in availableMicrophones)
+            {
+                if(microphone.ToLower().Contains("oculus"))
+                {
+                    return microphone;
+                }
+            }
+            return availableMicrophones[0];
         }
 
         private void Update()
