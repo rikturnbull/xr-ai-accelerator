@@ -28,7 +28,6 @@ The following plugins are provided:
     * Google
     * YOLO
     * Roboflow
-    * RoboflowLocal
 * ImageToImage
     * OpenAI
 * TextToImage
@@ -83,7 +82,7 @@ XrAiSecretsManager secretsManager = XrAiSecretsManager.GetSecretsManager()
 string apiKey = secretsManager.GetSecret("apiKey");
 ```
 
-**Important**: XrAiSecretsManager stores secrets in `Resources/XrAiSecretsManager.txt` file, you must add this file to your `.gitignore` to prevent accidentally committing sensitive API keys to version control.
+> **⚠️ Important:** : XrAiSecretsManager stores secrets in `Resources/XrAiSecretsManager.txt` file, you must add this file to your `.gitignore` to prevent accidentally committing sensitive API keys to version control.
 
 Add the following line to your `.gitignore` file:
 ```
@@ -157,4 +156,4 @@ private void OnResult(XrAiResult<Texture2D> result)
     }
 ```
 
-**To switch to another provider plugin - change the name and the provider specific options. The rest remains the same.**
+To switch to another provider plugin - change the name and the provider specific options. The rest remains the same.
