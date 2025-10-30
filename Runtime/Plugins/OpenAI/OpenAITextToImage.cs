@@ -23,12 +23,10 @@ namespace XrAiAccelerator
             return Task.CompletedTask;
         }
 
-        public async Task Execute(Dictionary<string, string> options, Action<XrAiResult<Texture2D>> callback)
+        public async Task Execute(string prompt, Dictionary<string, string> options, Action<XrAiResult<Texture2D>> callback)
         {
             try
             {
-                string prompt = _optionsHelper.GetOption("prompt", options);
-
                 ImageGenerationRequest request = new(prompt, Model.DallE_3);
                 IReadOnlyList<ImageResult> result = await _openAIClient.ImagesEndPoint.GenerateImageAsync(request);
 
