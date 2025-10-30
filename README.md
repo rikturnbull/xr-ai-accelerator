@@ -1,22 +1,20 @@
 # Unity XR AI Accelerator Library
 
-Documenation https://rikturnbull.github.io/xr-ai-accelerator/.
+Documentation https://rikturnbull.github.io/xr-ai-accelerator/.
 
 This is an API for various AI Model pipelines for use in Unity XR prototypes. Plugin providers can implement this API to expose their models via a standard interface.
 
-The intention is to provide a simplified API for building XR prototypes in Unity.
+The intention is to provide a simplified API for testing AI providers and models for XR projects in Unity.
 
 This initial proof of concept has a selection of AI Model pipelines:
 
-* ImageToText
 * ImageTo3d
-* ObjectDetection
 * ImageToImage
-* TextToImage
+* ImageToText
+* ObjectDetection
 * SpeechToText
+* TextToImage
 * TextToSpeech
-
-Note that these are one-shot model pipelines - not conversational LLMs.
 
 The following plugins are provided:
 
@@ -53,69 +51,110 @@ The following plugins are provided:
    - Click **Save**
 
 2. **Add Package via Git URL** - In Unity Editor:
+> **⚠️ Warning:** Ensure to use the version tag in the GIT url - this is work in progress and there may be future breaking changes.
+
    - Go to **Window > Package Manager**
    - Click the **+** button in the top-left corner
    - Select **Add package from git URL...**
-   - Enter: `https://github.com/rikturnbull/xr-ai-accelerator.git`
+   - Enter: `https://github.com/rikturnbull/xr-ai-accelerator.git#0.0.1`
    - Click **Add**
 
-3. **Copy Configuration File** - **Important**:
-   - Copy `XrAiModelConfig.txt` from the package's `Resources` folder
-   - Paste it into your project's `Assets/Resources` folder
-   - Create the `Resources` folder if it doesn't exist
-   - This file is required for default model configuration
+## Secrets Manager
 
-## Security Considerations
+You can use `XrAiSecretsManager` to store secrets:
 
-**Important**: IXrAiModelManager stores API keys in `Resources/XrAiApiKeys.txt` file, you must add this file to your `.gitignore` to prevent accidentally committing sensitive API keys to version control.
+1. Navigate to your `Assets/Resources` folder.
+2. Right-click `Create -> XrAiAccelerator -> Secrets Manager`.
+3. Click on the `XrAiSecretsManager` object and view the inspector.
+
+**Add** a secret: enter the secret and click `Add`.
+
+**Delete** a secret: click the `X` next to the secret.
+
+**Edit** a secret: delete the secret and recreate it.
+
+To fetch a secret in code:
+
+```csharp
+// Load secrets manager
+XrAiSecretsManager secretsManager = XrAiSecretsManager.GetSecretsManager()
+
+// Fetch a secret
+string apiKey = secretsManager.GetSecret("apiKey");
+```
+
+**Important**: XrAiSecretsManager stores secrets in `Resources/XrAiSecretsManager.txt` file, you must add this file to your `.gitignore` to prevent accidentally committing sensitive API keys to version control.
 
 Add the following line to your `.gitignore` file:
 ```
-Assets/Resources/XrAiApiKeys.txt
+Assets/Resources/XrAiSecretsManager.txt
 ```
 
-This ensures that your API keys remain private and are not shared when you commit your project to a repository.
+This ensures that your secrets remain private and are not shared when you commit your project to a repository.
 
-## Example
+## Usage Example
 
-The `XrAiFactory` class manages plugins and fetches models by name.
+```csharp
+// Load a provider implementation
+private IXrAiTextToImage textToImage;
+private XrAiSecretsManager secretsManager;
 
-For example, to fetch the Groq ImageToText model, load it by name '`Groq`' and pass your `apiKey` inside the `options`:
-
-```
-IXrAiImageToText imageToText =  XrAiFactory.LoadImageToText("Groq");
-imageToText.Initialize(new Dictionary<string, string> { { "apiKey", _apiKey } });
-```
-
-Now execute the pipeline, passing in any model specific options (Groq requires a model and a prompt):
-
-```
-_task = imageToText.Execute(
-    _rawImage.texture as Texture2D,
-    new Dictionary<string, string>
-    {
-        { "model", "llama-4-scout-17b-16e-instruct" },
-        { "prompt", "What's in this image?" }
-    },
-    OnImageToTextResult
-);
-```
-
-This is an asynchronous call that runs in the background. The callback will be executed when it has completed:
-
-```
-private void OnImageToTextResult(XrAiResult<string> result)
+public void LoadInference()
 {
-    if (!result.IsSuccess)
-    {
-        Debug.LogException(new Exception(result.ErrorMessage));
-        return;
-    }
-
-    Debug.Log(result.Data)
+    secretsManager = XrAiSecretsManager.GetSecretsManager();
+    textToImage = XrAiFactory.LoadTextToImage("OpenAI");
 }
+
+// Initialize inference
+public void InitializeInference()
+{
+    StartCoroutine(InitializeInferenceCoroutine());
+}
+
+// Initialize inference coroutine
+private IEnumerator InitializeInferenceCoroutine()
+{
+    Task task = textToImage.Initialize(new Dictionary<string, string>
+    {
+        // Model specific initialization options
+        { "apiKey", secretsManager.GetSecret("OpenAI") }
+    });
+    yield return new WaitUntil(() => task.IsCompleted);
+}
+
+// Run inference
+public void RunInference()
+{
+    StartCoroutine(RunInferenceCoroutine());
+}
+
+// Run inference coroutine
+private IEnumerator RunInferenceCoroutine()
+{
+    Task task = textToImage.Execute(
+        // Model specific execution options
+        new Dictionary<string, string>
+        {
+            { "prompt", "A futuristic city in VR with flying cars" }
+        },
+        OnResult
+    );
+    yield return new WaitUntil(() => task.IsCompleted);
+}
+
+// Process the result
+private void OnResult(XrAiResult<Texture2D> result)
+{
+    if (result.IsSuccess)
+    {
+        Texture2D generatedImage = result.Data;
+        // Use texture
+        ...
+    }
+    else
+    {
+        Debug.LogError($"Error: {result.ErrorMessage}");
+    }
 ```
 
-The `XrAiTaskResult` class supports multiple pipeline outputs - such as `string` for text results and `byte[]` for image results.
-
-**To switch to another model plugin - change the name and the model specific options. The rest remains the same.**
+**To switch to another provider plugin - change the name and the provider specific options. The rest remains the same.**

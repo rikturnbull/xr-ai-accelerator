@@ -1,137 +1,102 @@
-# XR AI Library - Runtime Core API Documentation
+# XR AI Accelerator Library - Documentation
 
-This documentation covers the core API classes and interfaces in the XR AI Library Runtime/Core module. These components provide the foundational interfaces and utilities for AI model integration in Unity XR applications.
+This documentation is organized into two main sections covering the Core framework and AI provider Plugins.
 
-## Core Interfaces
+## Overview
 
-The following interfaces define the contracts for different AI model pipelines:
+The XR AI Accelerator Library provides a simplified, unified API for integrating various AI capabilities into Unity XR applications. The library follows a modular architecture with standardized interfaces and a factory pattern for easy provider swapping and configuration management.
 
-### [IXrAiImageToText](IXrAiImageToText.md)
-Interface for AI models that generate text descriptions from images. Supports providers like Groq, Google, and Nvidia.
+### Supported AI Workflows
 
-### [IXrAImageTo3d](IXrAImageTo3d.md)
-Interface for AI models that generate 3D models from 2D images. Currently supports StabilityAI.
+- **Image-to-Text**: Generate descriptive text from images
+- **Image-to-3D**: Convert 2D images to 3D models
+- **Object Detection**: Detect and locate objects in images
+- **Text-to-Image**: Generate images from text descriptions
+- **Text-to-Speech**: Convert text to natural speech audio
+- **Speech-to-Text**: Transcribe audio to text
+- **Image-to-Image**: Transform and edit images with AI
 
-### [IXrAiObjectDetector](IXrAiObjectDetector.md)
-Interface for AI models that detect and locate objects within images. Supports Google, YOLO, and Roboflow providers.
+### Key Features
 
-### [IXrAiTextToSpeech](IXrAiTextToSpeech.md)
-Interface for AI models that convert text into spoken audio. Generates Unity AudioClip objects from text input.
+- **Unified Interface**: Consistent API across all AI providers
+- **Factory Pattern**: Easy provider instantiation and management
+- **Async Operations**: Non-blocking AI operations for smooth XR experiences
+- **Result Pattern**: Consistent error handling across all operations
+- **Local & Cloud**: Support for both cloud-based APIs and local inference
+- **Configuration Management**: Centralized API key and parameter management
 
-### [IXrAiSpeechToText](IXrAiSpeechToText.md)
-Interface for AI models that convert spoken audio into text. Processes audio data and returns transcribed text.
+## Documentation
 
-### [IXrAiTextToImage](IXrAiTextToImage.md)
-Interface for AI models that generate images from text descriptions. Creates visual content based on textual prompts.
+### [Core Framework](~Core/README.md)
 
-### [IXrAiImageToImage](IXrAiImageToImage.md)
-Interface for AI models that transform or modify images based on text prompts. Enables image-to-image translation and style transfer.
+The core framework provides the foundational interfaces, utilities, and management classes that enable the AI provider ecosystem.
 
-## Core Classes
+#### Core Interfaces
+- **[IXrAiImageToText](~Core/IXrAiImageToText.md)** - Image analysis and description
+- **[IXrAImageTo3d](~Core/IXrAImageTo3d.md)** - 2D to 3D model conversion
+- **[IXrAiObjectDetector](~Core/IXrAiObjectDetector.md)** - Object detection and localization
+- **[IXrAiTextToSpeech](~Core/IXrAiTextToSpeech.md)** - Text to audio conversion
+- **[IXrAiSpeechToText](~Core/IXrAiSpeechToText.md)** - Audio transcription
+- **[IXrAiTextToImage](~Core/IXrAiTextToImage.md)** - Text-based image generation
+- **[IXrAiImageToImage](~Core/IXrAiImageToImage.md)** - Image transformation and editing
 
-### [XrAiFactory](XrAiFactory.md)
-Central factory class for creating instances of various AI model pipelines. Provides static methods to load different types of AI models by name.
+#### Core Classes
+- **[XrAiFactory](~Core/XrAiFactory.md)** - Central factory for AI provider instantiation
+- **[XrAiResult](~Core/XrAiResult.md)** - Unified result type for consistent error handling
+- **[XrAiBoundingBox](~Core/XrAiBoundingBox.md)** - Object detection result structure
+- **[XrAiImageHelper](~Core/XrAiImageHelper.md)** - Texture encoding utilities
+- **[XrAiObjectDetectorHelper](~Core/XrAiObjectDetectorHelper.md)** - Visualization helpers
+- **[XrAiSpeechToTextHelper](~Core/XrAiSpeechToTextHelper.md)** - Audio recording utilities
 
-### [XrAiResult](XrAiResult.md)
-Unified result type for all AI operations. Encapsulates both success and error states using a result pattern for consistent error handling.
+### [Plugin Classes](~Plugins/README.md)
 
-### [XrAiModelManager](XrAiModelManager.md)
-MonoBehaviour component that manages AI model configurations, API keys, and workflow-specific properties. Provides centralized configuration management.
+The example AI provider plugins implement the core interfaces with specific cloud services and local inference engines.
 
-### [XrAiAssets](XrAiAssets.md)
-MonoBehaviour component that manages AI model assets required by local inference models. Serves as a container for model files and configuration data.
+#### Cloud-Based Providers
 
-## Data Structures
+**Google Services**
+- **[GoogleImageToText](~Plugins/GoogleImageToText.md)** - Gemini Vision for image analysis
+- **[GoogleObjectDetector](~Plugins/GoogleObjectDetector.md)** - Gemini Vision for object detection
 
-### [XrAiBoundingBox](XrAiBoundingBox.md)
-Struct representing detected object location and classification information in object detection results. Provides spatial boundaries and identification of detected objects.
+**OpenAI Services**
+- **[OpenAITextToImage](~Plugins/OpenAITextToImage.md)** - DALL-E 3 image generation
+- **[OpenAITextToSpeech](~Plugins/OpenAITextToSpeech.md)** - TTS-1 speech synthesis
+- **[OpenAISpeechToText](~Plugins/OpenAISpeechToText.md)** - Whisper speech recognition
+- **[OpenAIImageToImage](~Plugins/OpenAIImageToImage.md)** - Image editing and completion
 
-## Helper Classes
+**Specialized Services**
+- **[GroqImageToText](~Plugins/GroqImageToText.md)** - Fast LLaMA vision inference
+- **[RoboflowObjectDetector](~Plugins/RoboflowObjectDetector.md)** - Custom computer vision models
+- **[StabilityAiImageTo3d](~Plugins/StabilityAiImageTo3d.md)** - 2D to 3D model generation
 
-### [XrAiObjectDetectorHelper](XrAiObjectDetectorHelper.md)
-Utility class for visualizing object detection results in Unity. Creates visual bounding boxes and labels to display detected objects on screen.
+#### Local Inference
+- **[YoloObjectDetector](~Plugins/YoloObjectDetector.md)** - Local object detection with Unity Sentis
 
-### [XrAiSpeechToTextHelper](XrAiSpeechToTextHelper.md)
-MonoBehaviour component that simplifies audio recording and conversion for speech-to-text operations. Handles microphone input and audio encoding.
-
-### [XrAiImageHelper](XrAiImageHelper.md)
-Utility class for encoding Unity textures into standard image formats. Simplifies conversion of Texture2D objects into byte arrays for AI model processing.
-
-## Quick Start Guide
-
-### Basic Usage Pattern
-
-1. **Load a Model**: Use `XrAiFactory` to load an AI model by provider name
-2. **Prepare Input**: Convert Unity objects (textures, audio) to appropriate formats
-3. **Execute Model**: Call the model's `Execute` method with input data and options
-4. **Handle Results**: Check `XrAiResult.IsSuccess` and process the data or error
-
-### Example Implementation
+## Basic Usage Pattern
 
 ```csharp
-// Load an image-to-text model
-IXrAiImageToText imageToText = XrAiFactory.LoadImageToText("Groq", new Dictionary<string, string>
+// Load a provider using the factory
+var imageToText = XrAiFactory.LoadImageToText("Groq");
+
+// Configure with API keys and options
+var options = new Dictionary<string, string>
 {
-    { "apiKey", "your-api-key" }
+    ["apiKey"] = "your-api-key",
+};
+
+// Initialize the provider
+await imageToText.Initialize(options);
+
+// Execute AI operation
+await imageToText.Execute(inputTexture, options, result =>
+{
+    if (result.IsSuccess)
+    {
+        Debug.Log($"Result: {result.Data}");
+    }
+    else
+    {
+        Debug.LogError($"Error: {result.ErrorMessage}");
+    }
 });
-
-// Convert texture to bytes
-byte[] imageData = XrAiImageHelper.EncodeTexture(texture, "image/jpeg");
-
-// Execute the model
-var result = await imageToText.Execute(imageData, "image/jpeg", new Dictionary<string, string>
-{
-    { "model", "llama-vision-free" },
-    { "prompt", "Describe this image" }
-});
-
-// Handle the result
-if (result.IsSuccess)
-{
-    Debug.Log($"Description: {result.Data}");
-}
-else
-{
-    Debug.LogError($"Error: {result.ErrorMessage}");
-}
 ```
-
-## Configuration Management
-
-The library supports centralized configuration through `XrAiModelManager`:
-
-1. **Global Properties**: Provider-level settings like API keys
-2. **Workflow Properties**: Specific settings for different AI workflows
-3. **Separation of Concerns**: API keys stored separately from general configuration
-
-## Architecture Overview
-
-The core architecture follows these principles:
-
-- **Interface-Based Design**: All AI models implement standard interfaces
-- **Factory Pattern**: Centralized model creation and configuration
-- **Result Pattern**: Consistent error handling across all operations
-- **Helper Classes**: Utilities for common Unity integration tasks
-- **Configuration Management**: Centralized settings and API key management
-
-## Thread Safety
-
-- All AI operations are asynchronous using `Task<XrAiResult<T>>`
-- Helper classes support concurrent usage
-- Configuration management is thread-safe for read operations
-
-## Error Handling
-
-The library uses a result pattern rather than exceptions for expected failure cases:
-
-- Check `XrAiResult.IsSuccess` before accessing data
-- `ErrorMessage` provides descriptive error information
-- Exceptions are reserved for programming errors (null arguments, etc.)
-
-## Extension Points
-
-The modular design allows for easy extension:
-
-- Implement interfaces to add new AI providers
-- Extend helper classes for custom visualization or processing
-- Add new workflow types to the configuration system
