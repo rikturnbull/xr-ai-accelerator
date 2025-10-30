@@ -36,14 +36,14 @@ namespace XrAiAccelerator
         {
             static PackageStreamingAssetsCopier()
             {
-                Assembly packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(YoloExecutor).Assembly);
-                if(packageInfo == null)
+                UnityEditor.PackageManager.PackageInfo packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(YoloExecutor).Assembly);
+                if (packageInfo == null)
                 {
                     Debug.LogWarning("Could not find package info for YoloExecutor, copy StreamingAssets manually.");
-                    return
+                    return;
                 }
 
-                string source = Path.Combine(packageInfo.resolvedPath, "StreamingAssets");                
+                string source = Path.Combine(packageInfo.resolvedPath, "StreamingAssets");
                 string dest = "Assets/StreamingAssets";
 
                 if (!Directory.Exists(dest))

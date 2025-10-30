@@ -27,50 +27,50 @@ The XR AI Accelerator Library provides a simplified, unified API for integrating
 
 ## Documentation
 
-### [Core Framework](~Core/README.md)
+### [Core Framework](Core/README.md)
 
 The core framework provides the foundational interfaces, utilities, and management classes that enable the AI provider ecosystem.
 
 #### Core Interfaces
-- **[IXrAiImageToText](~Core/IXrAiImageToText.md)** - Image analysis and description
-- **[IXrAImageTo3d](~Core/IXrAImageTo3d.md)** - 2D to 3D model conversion
-- **[IXrAiObjectDetector](~Core/IXrAiObjectDetector.md)** - Object detection and localization
-- **[IXrAiTextToSpeech](~Core/IXrAiTextToSpeech.md)** - Text to audio conversion
-- **[IXrAiSpeechToText](~Core/IXrAiSpeechToText.md)** - Audio transcription
-- **[IXrAiTextToImage](~Core/IXrAiTextToImage.md)** - Text-based image generation
-- **[IXrAiImageToImage](~Core/IXrAiImageToImage.md)** - Image transformation and editing
+- **[IXrAiImageToText](Core/IXrAiImageToText.md)** - Image analysis and description
+- **[IXrAImageTo3d](Core/IXrAImageTo3d.md)** - 2D to 3D model conversion
+- **[IXrAiObjectDetector](Core/IXrAiObjectDetector.md)** - Object detection and localization
+- **[IXrAiTextToSpeech](Core/IXrAiTextToSpeech.md)** - Text to audio conversion
+- **[IXrAiSpeechToText](Core/IXrAiSpeechToText.md)** - Audio transcription
+- **[IXrAiTextToImage](Core/IXrAiTextToImage.md)** - Text-based image generation
+- **[IXrAiImageToImage](Core/IXrAiImageToImage.md)** - Image transformation and editing
 
 #### Core Classes
-- **[XrAiFactory](~Core/XrAiFactory.md)** - Central factory for AI provider instantiation
-- **[XrAiResult](~Core/XrAiResult.md)** - Unified result type for consistent error handling
-- **[XrAiBoundingBox](~Core/XrAiBoundingBox.md)** - Object detection result structure
-- **[XrAiImageHelper](~Core/XrAiImageHelper.md)** - Texture encoding utilities
-- **[XrAiObjectDetectorHelper](~Core/XrAiObjectDetectorHelper.md)** - Visualization helpers
-- **[XrAiSpeechToTextHelper](~Core/XrAiSpeechToTextHelper.md)** - Audio recording utilities
+- **[XrAiFactory](Core/XrAiFactory.md)** - Central factory for AI provider instantiation
+- **[XrAiResult](Core/XrAiResult.md)** - Unified result type for consistent error handling
+- **[XrAiBoundingBox](Core/XrAiBoundingBox.md)** - Object detection result structure
+- **[XrAiImageHelper](Core/XrAiImageHelper.md)** - Texture encoding utilities
+- **[XrAiObjectDetectorHelper](Core/XrAiObjectDetectorHelper.md)** - Visualization helpers
+- **[XrAiSpeechToTextHelper](Core/XrAiSpeechToTextHelper.md)** - Audio recording utilities
 
-### [Plugin Classes](~Plugins/README.md)
+### [Plugin Classes](Plugins/README.md)
 
 The example AI provider plugins implement the core interfaces with specific cloud services and local inference engines.
 
 #### Cloud-Based Providers
 
 **Google Services**
-- **[GoogleImageToText](~Plugins/GoogleImageToText.md)** - Gemini Vision for image analysis
-- **[GoogleObjectDetector](~Plugins/GoogleObjectDetector.md)** - Gemini Vision for object detection
+- **[GoogleImageToText](Plugins/GoogleImageToText.md)** - Gemini Vision for image analysis
+- **[GoogleObjectDetector](Plugins/GoogleObjectDetector.md)** - Gemini Vision for object detection
 
 **OpenAI Services**
-- **[OpenAITextToImage](~Plugins/OpenAITextToImage.md)** - DALL-E 3 image generation
-- **[OpenAITextToSpeech](~Plugins/OpenAITextToSpeech.md)** - TTS-1 speech synthesis
-- **[OpenAISpeechToText](~Plugins/OpenAISpeechToText.md)** - Whisper speech recognition
-- **[OpenAIImageToImage](~Plugins/OpenAIImageToImage.md)** - Image editing and completion
+- **[OpenAITextToImage](Plugins/OpenAITextToImage.md)** - DALL-E 3 image generation
+- **[OpenAITextToSpeech](Plugins/OpenAITextToSpeech.md)** - TTS-1 speech synthesis
+- **[OpenAISpeechToText](Plugins/OpenAISpeechToText.md)** - Whisper speech recognition
+- **[OpenAIImageToImage](Plugins/OpenAIImageToImage.md)** - Image editing and completion
 
 **Specialized Services**
-- **[GroqImageToText](~Plugins/GroqImageToText.md)** - Fast LLaMA vision inference
-- **[RoboflowObjectDetector](~Plugins/RoboflowObjectDetector.md)** - Custom computer vision models
-- **[StabilityAiImageTo3d](~Plugins/StabilityAiImageTo3d.md)** - 2D to 3D model generation
+- **[GroqImageToText](Plugins/GroqImageToText.md)** - Fast LLaMA vision inference
+- **[RoboflowObjectDetector](Plugins/RoboflowObjectDetector.md)** - Custom computer vision models
+- **[StabilityAiImageTo3d](Plugins/StabilityAiImageTo3d.md)** - 2D to 3D model generation
 
 #### Local Inference
-- **[YoloObjectDetector](~Plugins/YoloObjectDetector.md)** - Local object detection with Unity Sentis
+- **[YoloObjectDetector](Plugins/YoloObjectDetector.md)** - Local object detection with Unity Sentis
 
 ## Basic Usage Pattern
 
