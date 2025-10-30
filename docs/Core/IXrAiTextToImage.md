@@ -27,9 +27,10 @@ public Task Initialize(Dictionary<string, string> options = null);
 Processes text input and generates an image asynchronously.
 
 ```csharp
-public Task Execute(Dictionary<string, string> options, Action<XrAiResult<Texture2D>> callback);
+public Task Execute(string prompt, Dictionary<string, string> options, Action<XrAiResult<Texture2D>> callback);
 ```
 
 **Parameters:**
+- `prompt` (string): Prompt to use for image generation
 - `options` (Dictionary<string, string>): Model-specific options and parameters including the text prompt
 - `callback` (Action<XrAiResult&lt;Texture2D>>): The callback when inference is complete

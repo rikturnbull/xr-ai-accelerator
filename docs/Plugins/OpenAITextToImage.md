@@ -42,10 +42,11 @@ public Task Initialize(Dictionary<string, string> options = null)
 Generates an image from text using OpenAI's DALL-E 3 model.
 
 ```csharp
-public async Task Execute(Dictionary<string, string> options, Action<XrAiResult<Texture2D>> callback)
+public async Task Execute(string prompt, Dictionary<string, string> options, Action<XrAiResult<Texture2D>> callback)
 ```
 
 **Parameters:**
+- `prompt` (string): Prompt for image generation
 - `options` (Dictionary<string, string>): Configuration options for the API call
 - `callback` (Action<XrAiResult<Texture2D>>): Callback function to receive the generated image
 
@@ -65,14 +66,13 @@ public async Task Execute(Dictionary<string, string> options, Action<XrAiResult<
 var openAITextToImage = XrAiFactory.LoadTextToImage("OpenAI");
 var options = new Dictionary<string, string>
 {
-    ["apiKey"] = "your-openai-api-key",
-    ["prompt"] = "A futuristic cityscape with flying cars"
+    ["apiKey"] = "your-openai-api-key"
 };
 
 // Initialize must be called once before Execute
 await openAITextToImage.Initialize(options);
 
-await openAITextToImage.Execute(options, result =>
+await openAITextToImage.Execute("A futuristic cityscape with flying cars", options, result =>
 {
     if (result.IsSuccess)
     {

@@ -1,7 +1,5 @@
 # XR AI Accelerator Library - Documentation
 
-This documentation is organized into two main sections covering the Core framework and AI provider Plugins.
-
 ## Overview
 
 The XR AI Accelerator Library provides a simplified, unified API for integrating various AI capabilities into Unity XR applications. The library follows a modular architecture with standardized interfaces and a factory pattern for easy provider swapping and configuration management.
