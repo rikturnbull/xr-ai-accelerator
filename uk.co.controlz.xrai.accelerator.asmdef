@@ -1,5 +1,5 @@
 {
-	"name": "com.xrai.accelerator",
+	"name": "uk.co.controlz.xrai.accelerator",
 	"autoReferenced": true,
 	"references": [
 		"OpenAI",

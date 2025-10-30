@@ -1,6 +1,6 @@
 {
-  "name": "com.xrai.accelerator",
-  "version": "1.0.0",
+  "name": "uk.co.controlz.xrai.accelerator",
+  "version": "0.0.2",
   "displayName": "XRAI Accelerator",
   "description": "A custom package for accelerating XR AI development in Unity.",
   "dependencies": {
