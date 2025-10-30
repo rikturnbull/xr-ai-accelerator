@@ -10,19 +10,10 @@ namespace XrAiAccelerator
     {
         private YoloExecutor _yoloExecutor;
 
-        public async Task Initialize(Dictionary<string, string> options = null, XrAiAssets assets = null)
+        public async Task Initialize(Dictionary<string, string> options = null)
         {
-            Debug.Log("Yolo: Initializing...");
-            YoloAssets yoloAssets = assets as YoloAssets;
-            if (yoloAssets == null)
-            {
-                Debug.LogError("YoloObjectDetector requires YoloAssets for initialization.");
-                return;
-            }
-            Debug.Log("Yolo: Loading model...");
             _yoloExecutor = new YoloExecutor();
-            Debug.Log("Yolo: Model loading...");
-            await _yoloExecutor.LoadModel(yoloAssets);
+            await _yoloExecutor.LoadModel();
         }
 
         public async Task Execute(Texture2D texture, Dictionary<string, string> options, Action<XrAiResult<XrAiBoundingBox[]>> callback)

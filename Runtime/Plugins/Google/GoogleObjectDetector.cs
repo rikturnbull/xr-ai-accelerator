@@ -6,43 +6,60 @@ using UnityEngine;
 
 namespace XrAiAccelerator
 {
-
-    #region Main Class
     [XrAiProvider("Google")]
-    [XrAiOption("apiKey", XrAiOptionScope.Global, isRequired: true, description: "Google API key for authentication")]
-    [XrAiOption("url", XrAiOptionScope.Workflow, isRequired: true, defaultValue: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent", description: "The URL for the Google API endpoint")]
+    [XrAiOption("apiKey", XrAiOptionScope.Workflow, isRequired: true, description: "Google API key for authentication")]
+    [XrAiOption("imageQuality", XrAiOptionScope.Workflow, isRequired: false, defaultValue: "100", description: "JPEG quality (1-100, lower = smaller file)")]
+    [XrAiOption("maxImageDimension", XrAiOptionScope.Workflow, isRequired: false, defaultValue: "512", description: "Maximum width or height for the image before encoding (e.g., 512, 1024, 1536)")]
+    [XrAiOption("url", XrAiOptionScope.Workflow, isRequired: false, defaultValue: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent", description: "The URL for the Google API endpoint")]
     public class GoogleObjectDetector : GoogleAiBase, IXrAiObjectDetector
     {
         private static readonly string _PROMPT = "Detect the all of the prominent items in the image. The box_2d should be [ymin, xmin, ymax, xmax] normalized to 0-1000.";
 
         public async Task Execute(Texture2D texture, Dictionary<string, string> options, Action<XrAiResult<XrAiBoundingBox[]>> callback)
         {
-            byte[] imageBytes = XrAiImageHelper.EncodeTexture(texture, "image/jpeg");
-            int imageWidth = texture.width;
-            int imageHeight = texture.height;
-
-            XrAiResult<string> result = await ExecuteGeminiRequest(imageBytes, _PROMPT, options, new GeminiGenerationConfig
+            try
             {
-                response_mime_type = "application/json"
-            }
-            );
+                int maxDimension = _optionsHelper.GetIntOption("maxImageDimension", options);
+                int imageQuality = _optionsHelper.GetIntOption("imageQuality", options);
+                Texture2D scaledTexture = XrAiImageHelper.ScaleTexture(texture, maxDimension);
 
-            if (result.IsSuccess)
-            {
-                callback?.Invoke(
-                    XrAiResult.Success<XrAiBoundingBox[]>(
-                        ParseGeminiObjectDetectionResponse(
-                            result.Data,
-                            imageWidth,
-                            imageHeight
-                        ).ToArray()
-                    )
+                await Task.Yield();
+                byte[] imageBytes = scaledTexture.EncodeToJPG(imageQuality);
+
+                UnityEngine.Object.Destroy(scaledTexture);
+
+                int imageWidth = texture.width;
+                int imageHeight = texture.height;
+
+                XrAiResult<string> result = await ExecuteGeminiRequest(imageBytes, _PROMPT, options, new GeminiGenerationConfig
+                {
+                    response_mime_type = "application/json"
+                }
                 );
+
+                if (result.IsSuccess)
+                {
+                    callback?.Invoke(
+                        XrAiResult.Success<XrAiBoundingBox[]>(
+                            ParseGeminiObjectDetectionResponse(
+                                result.Data,
+                                imageWidth,
+                                imageHeight
+                            ).ToArray()
+                        )
+                    );
+                }
+                else
+                {
+                    callback?.Invoke(
+                        XrAiResult.Failure<XrAiBoundingBox[]>(result.ErrorMessage)
+                    );
+                }
             }
-            else
+            catch (Exception ex)
             {
                 callback?.Invoke(
-                    XrAiResult.Failure<XrAiBoundingBox[]>(result.ErrorMessage)
+                    XrAiResult.Failure<XrAiBoundingBox[]>($"Exception in GoogleObjectDetector: {ex.Message}")
                 );
             }
         }
@@ -107,6 +124,4 @@ namespace XrAiAccelerator
             return boundingBoxes;
         }
     }
-    #endregion
-
 }

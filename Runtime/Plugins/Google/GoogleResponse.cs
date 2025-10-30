@@ -2,7 +2,6 @@ using System;
 
 namespace XrAiAccelerator
 {
-    #region Google Response JSON Classes
     [Serializable]
     public class GeminiResponse
     {
@@ -39,5 +38,4 @@ namespace XrAiAccelerator
         public string label;
         public float[] box_2d;
     }
-    #endregion
 }

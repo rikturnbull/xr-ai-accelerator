@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using UnityEngine;
 
 namespace XrAiAccelerator
 {
@@ -36,6 +37,15 @@ namespace XrAiAccelerator
             DiscoverAllInterfaces();
         }
 
+        public static IXrAiImageTo3d LoadImageTo3d(string name) => LoadProvider<IXrAiImageTo3d>(name);
+        public static IXrAiObjectDetector LoadObjectDetector(string name) => LoadProvider<IXrAiObjectDetector>(name);
+        public static IXrAiImageToText LoadImageToText(string name) => LoadProvider<IXrAiImageToText>(name);
+        public static IXrAiImageToImage LoadImageToImage(string name) => LoadProvider<IXrAiImageToImage>(name);
+        public static IXrAiTextToImage LoadTextToImage(string name) => LoadProvider<IXrAiTextToImage>(name);
+        public static IXrAiTextToText LoadTextToText(string name) => LoadProvider<IXrAiTextToText>(name);
+        public static IXrAiSpeechToText LoadSpeechToText(string name) => LoadProvider<IXrAiSpeechToText>(name);
+        public static IXrAiTextToSpeech LoadTextToSpeech(string name) => LoadProvider<IXrAiTextToSpeech>(name);
+
         private static void DiscoverAllInterfaces()
         {
             try
@@ -45,16 +55,14 @@ namespace XrAiAccelerator
                 {
                     GetImplementationsForType(interfaceType);
                 }
-
-                UnityEngine.Debug.Log($"XrAiFactory initialized with {XrAiInterfaces.Count} interfaces and {_cachedImplementations.Values.Sum(d => d.Count)} implementations");
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogError($"Failed to initialize XR AI interfaces: {ex.Message}");
+                Debug.LogError($"Failed to initialize XR AI interfaces: {ex.Message}");
             }
         }
 
-        private static Dictionary<string, Type> GetImplementationsForType(Type interfaceType)
+        public static Dictionary<string, Type> GetImplementationsForType(Type interfaceType)
         {
             if (_cachedImplementations.TryGetValue(interfaceType, out var cached))
             {
@@ -82,7 +90,7 @@ namespace XrAiAccelerator
                 }
                 catch (ReflectionTypeLoadException ex)
                 {
-                    UnityEngine.Debug.LogWarning($"Could not load some types from assembly {assembly.FullName}: {ex.Message}");
+                    Debug.LogWarning($"Could not load some types from assembly {assembly.FullName}: {ex.Message}");
                 }
             }
 
@@ -90,9 +98,14 @@ namespace XrAiAccelerator
             return implementations;
         }
 
-        private static Dictionary<string, Type> GetImplementations<T>()
+        public List<Type> GetTypes()
         {
-            return GetImplementationsForType(typeof(T));
+            return _cachedImplementations.Values.SelectMany(dict => dict.Values).ToList();
+        }
+
+        private static Dictionary<string, Type> GetImplementations(Type type)
+        {
+            return GetImplementationsForType(type);
         }
 
         private static T CreateInstance<T>(Type implementationType)
@@ -107,18 +120,9 @@ namespace XrAiAccelerator
             }
         }
 
-        public static IXrAiImageTo3d LoadImageTo3d(string name) => LoadProvider<IXrAiImageTo3d>(name);
-        public static IXrAiObjectDetector LoadObjectDetector(string name) => LoadProvider<IXrAiObjectDetector>(name);
-        public static IXrAiImageToText LoadImageToText(string name) => LoadProvider<IXrAiImageToText>(name);
-        public static IXrAiImageToImage LoadImageToImage(string name) => LoadProvider<IXrAiImageToImage>(name);
-        public static IXrAiTextToImage LoadTextToImage(string name) => LoadProvider<IXrAiTextToImage>(name);
-        public static IXrAiTextToText LoadTextToText(string name) => LoadProvider<IXrAiTextToText>(name);
-        public static IXrAiSpeechToText LoadSpeechToText(string name) => LoadProvider<IXrAiSpeechToText>(name);
-        public static IXrAiTextToSpeech LoadTextToSpeech(string name) => LoadProvider<IXrAiTextToSpeech>(name);
-
         private static T LoadProvider<T>(string name)
         {
-            var implementations = GetImplementations<T>();
+            var implementations = GetImplementations(typeof(T));
 
             if (implementations.TryGetValue(name, out var implementationType))
             {
@@ -128,15 +132,15 @@ namespace XrAiAccelerator
             throw new NotSupportedException($"Model '{name}' is not supported. Available: {string.Join(", ", implementations.Keys)}");
         }
 
-        public static List<string> GetProviderNames<T>()
+        public static List<string> GetProviderNames(Type type)
         {
-            var implementations = GetImplementations<T>();
+            var implementations = GetImplementations(type);
             return implementations.Keys.ToList();
-}
+        }
 
-        public static List<XrAiOptionAttribute> GetProviderOptions<T>(string providerName)
+        public static List<XrAiOptionAttribute> GetProviderOptions<T>(string providerName, Type type)
         {
-            var implementations = GetImplementations<T>();
+            var implementations = GetImplementations(type);
 
             if (implementations.TryGetValue(providerName, out var implementationType))
             {
@@ -146,29 +150,16 @@ namespace XrAiAccelerator
             return new List<XrAiOptionAttribute>();
         }
 
-        public static Dictionary<string, List<XrAiOptionAttribute>> GetAllProviderOptions<T>()
+        public static Dictionary<string, List<XrAiOptionAttribute>> GetAllProviderOptions(Type type)
         {
-            var implementations = GetImplementations<T>();
+            var implementations = GetImplementations(type);
             var result = new Dictionary<string, List<XrAiOptionAttribute>>();
-            
-            foreach (var kvp in implementations)
-            {
-                result[kvp.Key] = GetOptionAttributes(kvp.Value);
-            }
-            
-            return result;
-        }
 
-        public static Dictionary<string, List<XrAiOptionAttribute>> GetAllProviderOptions(Type interfaceType)
-        {
-            var implementations = GetImplementationsForType(interfaceType);
-            var result = new Dictionary<string, List<XrAiOptionAttribute>>();
-            
             foreach (var kvp in implementations)
             {
                 result[kvp.Key] = GetOptionAttributes(kvp.Value);
             }
-            
+
             return result;
         }
 

@@ -6,7 +6,7 @@ namespace XrAiAccelerator
 {
     public interface IXrAiSpeechToText
     {
-        public Task Initialize(Dictionary<string, string> options = null, XrAiAssets assets = null);
+        public Task Initialize(Dictionary<string, string> options = null);
         public Task Execute(byte[] audioData, Dictionary<string, string> options, Action<XrAiResult<string>> callback);
     }
 }

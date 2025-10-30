@@ -2,7 +2,6 @@ using System;
 
 namespace XrAiAccelerator
 {
-    #region Google Request JSON Classes
     [Serializable]
     public class GeminiRequest
     {
@@ -35,5 +34,4 @@ namespace XrAiAccelerator
     {
         public string response_mime_type;
     }
-    #endregion
 }

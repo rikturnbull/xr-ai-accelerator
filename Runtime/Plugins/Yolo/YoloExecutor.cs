@@ -1,9 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Unity.InferenceEngine;
 using UnityEngine;
+using UnityEngine.Networking;
+using UnityEditor;
 
 namespace XrAiAccelerator
 {
@@ -24,13 +27,88 @@ namespace XrAiAccelerator
 
         private BackendType _backendType = BackendType.CPU; // Default backend type
 
-        public async Task LoadModel(YoloAssets yoloAssets)
+        private const string MODEL_FILE_NAME = "yolo11n-seg.sentis";
+        private const string LABELS_FILE_NAME = "yolo11n-labels.txt";
+
+#if UNITY_EDITOR
+        [InitializeOnLoad]
+        public static class PackageStreamingAssetsCopier
         {
-            Model model = ModelLoader.Load(yoloAssets.ModelAsset);
+            static PackageStreamingAssetsCopier()
+            {
+                Assembly packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(YoloExecutor).Assembly);
+                if(packageInfo == null)
+                {
+                    Debug.LogWarning("Could not find package info for YoloExecutor, copy StreamingAssets manually.");
+                    return
+                }
+
+                string source = Path.Combine(packageInfo.resolvedPath, "StreamingAssets");                
+                string dest = "Assets/StreamingAssets";
+
+                if (!Directory.Exists(dest))
+                {
+                    Directory.CreateDirectory(dest);
+                }
+                if (Directory.Exists(source))
+                {
+                    foreach (var file in new[] { MODEL_FILE_NAME, LABELS_FILE_NAME })
+                    {
+                        if (!File.Exists(Path.Combine(dest, file)))
+                        {
+                            Debug.Log($"Copying {file} from {source} to {dest}");
+                            FileUtil.CopyFileOrDirectory(Path.Combine(source, file), Path.Combine(dest, file));
+                        }
+                    }
+                }
+            }
+        }
+#endif
+
+        public async Task LoadModel()
+        {
+            Task<byte[]> modelDataTask = LoadStreamingAssetAsync<byte[]>(MODEL_FILE_NAME);
+            Task<string> labelContentTask = LoadStreamingAssetAsync<string>(LABELS_FILE_NAME);
+
+            byte[] modelData = await modelDataTask;
+            string labelContent = await labelContentTask;
+
+            using MemoryStream modelStream = new(modelData);
+            Model model = ModelLoader.Load(modelStream);
+
+            // Model model = ModelLoader.Load(yoloAssets.ModelAsset);
             _inferenceEngineWorker = new Worker(model, _backendType);
-            _labels = yoloAssets.LabelsAsset.text.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            _labels = labelContent.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
             _isModelLoaded = true;
             await WarmUpModel();
+        }
+
+        private async Task<T> LoadStreamingAssetAsync<T>(string fileName)
+        {
+            string filePath = Path.Combine(Application.streamingAssetsPath, fileName);
+
+            using UnityWebRequest request = UnityWebRequest.Get(filePath);
+
+            await request.SendWebRequest();
+
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError($"Failed to load {fileName}: {request.error}");
+                throw new System.Exception($"Failed to load {fileName}: {request.error}");
+            }
+
+            if (typeof(T) == typeof(byte[]))
+            {
+                return (T)(object)request.downloadHandler.data;
+            }
+            else if (typeof(T) == typeof(string))
+            {
+                return (T)(object)request.downloadHandler.text;
+            }
+            else
+            {
+                throw new ArgumentException($"Unsupported type {typeof(T)}. Only byte[] and string are supported.");
+            }
         }
 
         public async Task WarmUpModel()
@@ -40,7 +118,7 @@ namespace XrAiAccelerator
             // Create dummy input for warmup
             var dummyInput = new Tensor<float>(new TensorShape(1, 3, 640, 640));
             var schedule = _inferenceEngineWorker.ScheduleIterable(dummyInput);
-            
+
             int it = 0;
             while (schedule.MoveNext())
             {
@@ -49,7 +127,7 @@ namespace XrAiAccelerator
                     await Task.Yield();
                 }
             }
-            
+
             dummyInput.Dispose();
         }
 
@@ -93,7 +171,7 @@ namespace XrAiAccelerator
 
                 if (_outputs[i] == null || _outputs[i].shape[0] == 0)
                 {
-                    onComplete?.Invoke(XrAiResult.Failure<XrAiBoundingBox[]>($"No output{i} available"));
+                    onComplete?.Invoke(XrAiResult.Success(Array.Empty<XrAiBoundingBox>()));
                     CleanupOutputs();
                     return;
                 }
@@ -113,6 +191,7 @@ namespace XrAiAccelerator
             }
             catch (Exception ex)
             {
+                Debug.LogException(ex);
                 onComplete?.Invoke(XrAiResult.Failure<XrAiBoundingBox[]>(ex.Message));
             }
 

@@ -1,7 +1,6 @@
 using Newtonsoft.Json;
 using OpenAI;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -9,53 +8,59 @@ using UnityEngine;
 
 namespace XrAiAccelerator
 {
-    #region Main Class
     [XrAiProvider("Roboflow")]
     [XrAiOption("apiKey", XrAiOptionScope.Global, isRequired: true, description: "Roboflow API key for authentication")]
-    [XrAiOption("url", XrAiOptionScope.Workflow, isRequired: true, defaultValue: "https://serverless.roboflow.com/infer/workflows/xr-shu81/yolov11-object-detection", description: "The URL for the Roboflow API endpoint")]  
-    [XrAiOption("modelId", XrAiOptionScope.Workflow, isRequired: false, description: "The model id to use for object detection")]
+    [XrAiOption("url", XrAiOptionScope.Workflow, isRequired: false, defaultValue: "https://serverless.roboflow.com/infer/workflows/xr-shu81/yolov11-object-detection", description: "The URL for the Roboflow API endpoint")]  
+    [XrAiOption("modelId", XrAiOptionScope.Workflow, isRequired: false, defaultValue: "", description: "The model id to use for object detection")]
     public class RoboflowObjectDetector : IXrAiObjectDetector
     {
         private HttpClient _httpClient = new HttpClient();
-        private Dictionary<string, string> _globalOptions = new Dictionary<string, string>();
+        private XrAiOptionsHelper _optionsHelper;
 
-        public Task Initialize(Dictionary<string, string> options = null, XrAiAssets assets = null)
+        public Task Initialize(Dictionary<string, string> options = null)
         {
-            _globalOptions = options ?? new Dictionary<string, string>();
+            _optionsHelper = new XrAiOptionsHelper(this, options);
             return Task.CompletedTask;
         }
 
         public async Task Execute(Texture2D texture, Dictionary<string, string> options, Action<XrAiResult<XrAiBoundingBox[]>> callback)
         {
-            byte[] imageBytes = XrAiImageHelper.EncodeTexture(texture, "image/jpeg");
-            int imageWidth = texture.width;
-            int imageHeight = texture.height;
+            try
+            {
+                byte[] imageBytes = XrAiImageHelper.EncodeTexture(texture, "image/jpeg");
+                int imageWidth = texture.width;
+                int imageHeight = texture.height;
 
-            XrAiResult<XrAiBoundingBox[]> result = await ExecuteRoboflowRequest(imageBytes, options);
+                XrAiResult<XrAiBoundingBox[]> result = await ExecuteRoboflowRequest(imageBytes, options);
 
-            callback?.Invoke(
-                result.IsSuccess
-                    ? XrAiResult.Success(result.Data)
-                    : XrAiResult.Failure<XrAiBoundingBox[]>(result.ErrorMessage)
-            );
+                callback?.Invoke(
+                    result.IsSuccess
+                        ? XrAiResult.Success(result.Data)
+                        : XrAiResult.Failure<XrAiBoundingBox[]>(result.ErrorMessage)
+                );
+            }
+            catch (Exception ex)
+            {
+                callback?.Invoke(
+                    XrAiResult.Failure<XrAiBoundingBox[]>($"Exception in RoboflowObjectDetector: {ex.Message}")
+                );
+            }
         }
 
         private async Task<XrAiResult<XrAiBoundingBox[]>> ExecuteRoboflowRequest(byte[] imageBytes, Dictionary<string, string> options = null)
         {
             try
             {
-                string apiKey = GetOption("apiKey", options);
-                string url = GetOption("url", options);
-                string modelId = GetOption("modelId", options, "");
+                string apiKey = _optionsHelper.GetOption("apiKey", options);
+                string url = _optionsHelper.GetOption("url", options);
+                string modelId = _optionsHelper.GetOption("modelId", options);
 
                 string base64Image = Convert.ToBase64String(imageBytes);
 
                 RoboflowRequest requestData = CreateRoboflowRequest(url, base64Image, apiKey, modelId);
-                Debug.Log($"Roboflow request: {JsonConvert.SerializeObject(requestData)}");
                 string jsonContent = JsonConvert.SerializeObject(requestData);
                 var content = new StringContent(jsonContent, System.Text.Encoding.UTF8);
                 
-                // Explicitly set Content-Type header
                 content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
 
                 HttpResponseMessage response = await _httpClient.PostAsync(url, content);
@@ -122,7 +127,6 @@ namespace XrAiAccelerator
         {
             List<XrAiBoundingBox> boundingBoxes = new List<XrAiBoundingBox>();
 
-            Debug.Log($"Roboflow response: {responseText}");
             try
             {
                 RoboflowPredictions roboflowResult;
@@ -178,23 +182,5 @@ namespace XrAiAccelerator
 
             return XrAiResult.Success(boundingBoxes.ToArray());
         }
-
-        private string GetOption(string key, Dictionary<string, string> options = null, String defaultValue = null)
-        {
-            if (options != null && options.TryGetValue(key, out string value))
-            {
-                return value;
-            }
-            else if (_globalOptions.TryGetValue(key, out value))
-            {
-                return value;
-            }
-            if(defaultValue != null)
-            {
-                return defaultValue;
-            }
-            throw new KeyNotFoundException($"Option '{key}' not found.");
-        }
     }
-    #endregion
 }

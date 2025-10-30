@@ -26,6 +26,8 @@ namespace XrAiAccelerator
 
         private static void DrawKeypoints(Transform parent, XrAiKeypoint[] keypoints, Vector2 imageDimensions = default, Vector2 canvasDimensions = default)
         {
+            if(keypoints == null || keypoints.Length == 0) return;
+
             imageDimensions = imageDimensions == default ? new Vector2(1.0f, 1.0f) : imageDimensions;
             canvasDimensions = canvasDimensions == default ? new Vector2(1.0f, 1.0f) : canvasDimensions;
 
@@ -50,19 +52,16 @@ namespace XrAiAccelerator
             float unityX = centeredX * canvasDimensions.x;
             float unityY = centeredY * canvasDimensions.y;
 
-            // Create a small sphere to represent the keypoint
             GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             sphere.transform.SetParent(pointObject.transform);
             
-            // Scale sphere size based on canvas dimensions
             float baseSphereSize = 0.008f;
             float dimensionMultiplier = (canvasDimensions.x + canvasDimensions.y) / 2f;
             float sphereSize = baseSphereSize * dimensionMultiplier;
             sphere.transform.localScale = new Vector3(sphereSize, sphereSize, 0.0001f);
             
-            sphere.transform.localPosition = new Vector3(unityX, unityY, 0f); // Slightly above the plane
+            sphere.transform.localPosition = new Vector3(unityX, unityY, 0f);
 
-            // Set color based on confidence
             Color color = Color.Lerp(Color.red, Color.green, keypoint.confidence);
             Renderer renderer = sphere.GetComponent<Renderer>();
             renderer.material.color = color;
@@ -83,12 +82,6 @@ namespace XrAiAccelerator
             Color boxColor = GetBoxColor(colorIndex);
             GameObject lineObject = CreateNewBox(parent, boxColor, dimensions);
 
-            // Clean debug output - only for the first person
-            if (box.CenterX == 708.5f) // First person's box
-            {
-                Debug.Log($"Box {box.ClassName}: Raw Center({box.CenterX}, {box.CenterY})");
-            }
-
             float scaledWidth = box.Width * scale.x;
             float scaledHeight = box.Height * scale.y;
             float scaledCenterX = box.CenterX * scale.x;
@@ -97,29 +90,22 @@ namespace XrAiAccelerator
             float boxHalfWidth = dimensions.x / 2;
             float boxHalfHeight = dimensions.y / 2;
 
-            float halfWidth = dimensions.x / 2;
-            float halfHeight = dimensions.y / 2;
-
-            // Calculate box corners
             float left = scaledCenterX - scaledWidth / 2 - boxHalfWidth;
             float right = scaledCenterX + scaledWidth / 2 - boxHalfWidth;
             float top = scaledCenterY + scaledHeight / 2 - boxHalfHeight;
             float bottom = scaledCenterY - scaledHeight / 2 - boxHalfHeight;
 
-            // Set line positions to form a rectangle
             LineRenderer lineRenderer = lineObject.GetComponent<LineRenderer>();
-            lineRenderer.positionCount = 5; // 5 points to close the rectangle
-            lineRenderer.SetPosition(0, new Vector3(left, bottom, -0.01f)); // Bottom-left
-            lineRenderer.SetPosition(1, new Vector3(right, bottom, -0.01f)); // Bottom-right
-            lineRenderer.SetPosition(2, new Vector3(right, top, -0.01f)); // Top-right
-            lineRenderer.SetPosition(3, new Vector3(left, top, -0.01f)); // Top-left
-            lineRenderer.SetPosition(4, new Vector3(left, bottom, -0.01f)); // Close the rectangle
+            lineRenderer.positionCount = 5;
+            lineRenderer.SetPosition(0, new Vector3(left, bottom, -0.01f));
+            lineRenderer.SetPosition(1, new Vector3(right, bottom, -0.01f));
+            lineRenderer.SetPosition(2, new Vector3(right, top, -0.01f));
+            lineRenderer.SetPosition(3, new Vector3(left, top, -0.01f));
+            lineRenderer.SetPosition(4, new Vector3(left, bottom, -0.01f));
 
-            // Set label text
             TextMeshPro label = lineObject.GetComponentInChildren<TextMeshPro>();
             label.text = box.ClassName;
 
-            // get the font height in pixels
             float labelHeight = label.GetPreferredValues(label.text).y - 0.01f; // Scale down for Unity units
             label.transform.localPosition = new Vector3(scaledCenterX - boxHalfWidth, top + labelHeight, -0.01f);
         }
@@ -134,10 +120,10 @@ namespace XrAiAccelerator
                 Color.yellow,
                 Color.cyan,
                 Color.magenta,
-                new Color(1f, 0.5f, 0f), // Orange
-                new Color(0.5f, 0f, 1f), // Purple
-                new Color(0f, 1f, 0.5f), // Spring green
-                new Color(1f, 0f, 0.5f)  // Hot pink
+                new(1f, 0.5f, 0f),
+                new(0.5f, 0f, 1f),
+                new(0f, 1f, 0.5f),
+                new(1f, 0f, 0.5f)
             };
             
             return colors[index % colors.Length];
@@ -145,7 +131,6 @@ namespace XrAiAccelerator
 
         private static GameObject CreateNewBox(Transform parent, Color color, Vector2 dimensions)
         {
-            // Create the box with LineRenderer
             GameObject lineObject = new("ObjectBox");
             lineObject.transform.SetParent(parent, false);
 
@@ -154,9 +139,8 @@ namespace XrAiAccelerator
             lineRenderer.startColor = color;
             lineRenderer.endColor = color;
             
-            // Calculate line width based on image dimensions
             float baseWidth = 0.005f;
-            float dimensionMultiplier = (dimensions.x + dimensions.y) / 2f; // Average of image dimensions
+            float dimensionMultiplier = (dimensions.x + dimensions.y) / 2f;
             float lineWidth = baseWidth * dimensionMultiplier;
             
             lineRenderer.startWidth = lineWidth;
@@ -164,13 +148,12 @@ namespace XrAiAccelerator
             lineRenderer.useWorldSpace = false;
             lineRenderer.sortingOrder = 1;
 
-            // Create the label
             GameObject textGameObject = new("ObjectLabel");
             textGameObject.transform.SetParent(lineObject.transform, false);
 
             TextMeshPro textMesh = textGameObject.AddComponent<TextMeshPro>();
             textMesh.color = color;
-            textMesh.fontSize = 0.5f * dimensionMultiplier; // Scale font size based on image dimensions
+            textMesh.fontSize = 0.5f * dimensionMultiplier;
             textMesh.alignment = TextAlignmentOptions.Center;
             textMesh.characterSpacing = 0;
             textMesh.sortingOrder = 1;
