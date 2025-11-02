@@ -31,7 +31,7 @@ namespace XrAiAccelerator
                 int imageWidth = texture.width;
                 int imageHeight = texture.height;
 
-                XrAiResult<string> result = await ExecuteGeminiRequest(imageBytes, _PROMPT, options, new GeminiGenerationConfig
+                XrAiResult<string> result = await ExecuteObjectDetectionRequest(imageBytes, _PROMPT, options, new GeminiGenerationConfig
                 {
                     response_mime_type = "application/json"
                 }

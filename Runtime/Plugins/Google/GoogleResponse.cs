@@ -24,6 +24,7 @@ namespace XrAiAccelerator
     public class GeminiPart
     {
         public string text;
+        public GeminiInlineData inlineData;
     }
 
     [Serializable]

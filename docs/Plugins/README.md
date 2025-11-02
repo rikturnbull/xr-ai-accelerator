@@ -30,6 +30,9 @@ Local YOLO (You Only Look Once) implementation using Unity Sentis. Provides fast
 #### [OpenAITextToImage](OpenAITextToImage.md)
 OpenAI DALL-E 3 implementation for generating high-quality images from text prompts. Creates detailed visual content based on natural language descriptions.
 
+#### [GoogleTextToImage](GoogleTextToImage.md)
+Google Gemini Vision API for generating images from text prompts.
+
 ### Text-to-Speech Providers
 
 #### [OpenAITextToSpeech](OpenAITextToSpeech.md)

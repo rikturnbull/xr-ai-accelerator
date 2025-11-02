@@ -32,6 +32,7 @@ The following plugins are provided:
     * OpenAI
 * TextToImage
     * OpenAI
+    * Google
 * SpeechToText
     * OpenAI
 * TextToSpeech
