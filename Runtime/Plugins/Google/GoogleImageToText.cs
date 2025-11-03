@@ -33,7 +33,7 @@ namespace XrAiAccelerator
 
                 string prompt = _optionsHelper.GetOption("prompt", options);
 
-                XrAiResult<string> result = await ExecuteGeminiRequest(imageBytes, prompt, options);
+                XrAiResult<string> result = await ExecuteImageToTextRequest(imageBytes, prompt, options);
                 if (result.IsSuccess)
                 {
                     callback?.Invoke(result);
