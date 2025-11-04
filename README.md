@@ -56,7 +56,7 @@ The following plugins are provided:
    - Go to **Window > Package Manager**
    - Click the **+** button in the top-left corner
    - Select **Add package from git URL...**
-   - Enter: `https://github.com/rikturnbull/xr-ai-accelerator.git#0.0.1`
+   - Enter: `https://github.com/rikturnbull/xr-ai-accelerator.git#0.0.2`
    - Click **Add**
 
 ## Secrets Manager
@@ -80,7 +80,7 @@ To fetch a secret in code:
 XrAiSecretsManager secretsManager = XrAiSecretsManager.GetSecretsManager()
 
 // Fetch a secret
-string apiKey = secretsManager.GetSecret("apiKey");
+string apiKey = secretsManager.GetSecret("secretName");
 ```
 
 > **⚠️ Important:** : XrAiSecretsManager stores secrets in `Resources/XrAiSecretsManager.txt` file, you must add this file to your `.gitignore` to prevent accidentally committing sensitive API keys to version control.
