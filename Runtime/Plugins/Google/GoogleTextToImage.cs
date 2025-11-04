@@ -14,6 +14,7 @@ namespace XrAiAccelerator
         {
             try
             {
+                prompt = "Generate an image based on the following description: " + prompt;
                 XrAiResult<Texture2D> result = await ExecuteTextToImageRequest(prompt, options);
                 if (result.IsSuccess)
                 {
