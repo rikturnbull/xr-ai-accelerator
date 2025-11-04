@@ -106,36 +106,28 @@ namespace XrAiAccelerator
                 }
 
                 string responseText = await response.Content.ReadAsStringAsync();
-
                 GeminiResponse geminiResponse = JsonConvert.DeserializeObject<GeminiResponse>(responseText);
-
-                GeminiPart part = geminiResponse?.candidates?[0]?.content?.parts?.FirstOrDefault();
-                if (part == null)
+                foreach(GeminiPart part in geminiResponse?.candidates?[0]?.content?.parts ?? Array.Empty<GeminiPart>())
                 {
-                    return XrAiResult.Failure<T>("No content received from Google Gemini API");
-                }
-
-                if (typeof(T) == typeof(string) && part.text != null)
-                {
-                    return XrAiResult.Success((T)(object)part.text);
-                }
-                else if (typeof(T) == typeof(Texture2D) && part.inlineData != null)
-                {
-                    byte[] resultBytes = Convert.FromBase64String(part.inlineData.data);
-                    Texture2D resultTexture = new(2, 2);
-                    if (resultTexture.LoadImage(resultBytes))
+                    if (typeof(T) == typeof(string) && part.text != null)
                     {
-                        return XrAiResult.Success((T)(object)resultTexture);
+                        return XrAiResult.Success((T)(object)part.text);
                     }
-                    else
+                    else if (typeof(T) == typeof(Texture2D) && part.inlineData != null)
                     {
-                        return XrAiResult.Failure<T>("Failed to load image data into Texture2D");
+                        byte[] resultBytes = Convert.FromBase64String(part.inlineData.data);
+                        Texture2D resultTexture = new(2, 2);
+                        if (resultTexture.LoadImage(resultBytes))
+                        {
+                            return XrAiResult.Success((T)(object)resultTexture);
+                        }
+                        else
+                        {
+                            return XrAiResult.Failure<T>("Failed to load image data into Texture2D");
+                        }
                     }
                 }
-                else
-                {
-                    return XrAiResult.Failure<T>($"Empty response or unsupported return type: {typeof(T)}");
-                }
+                return XrAiResult.Failure<T>("No valid content received from Google Gemini API");
             }
             catch (Exception ex)
             {
